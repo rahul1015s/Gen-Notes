@@ -1,13 +1,21 @@
 import express from "express";
+import notesRouter from "./routes/notes.routes.js";
+import { appLimiter } from "./middlewares/rateLimit.middleware.js";
+
+
 const app = express();
-import { PORT } from "./config/env.js";
+
+//Middlewares
+app.use(appLimiter);
+app.use(express.json());
+
+//Routes
+app.use('/api/v1/notes', notesRouter)
 
 app.get('/',(req, res) => {
     res.send('Hello world!')
 })
 
-app.listen(PORT, async () => {
-    console.log(`App is running on http://localhost:${PORT}`)
-})
+
 
 export default app;
