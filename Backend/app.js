@@ -1,6 +1,6 @@
 import express from "express";
 import notesRouter from "./routes/notes.routes.js";
-import { appLimiter } from "./middlewares/rateLimit.middleware.js";
+
 
 import cors from "cors";
 
@@ -12,7 +12,7 @@ app.use(cors({
 }));
 
 
-app.use(appLimiter);
+
 
 
 app.use(express.json());

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import Navbar from '../components/Navbar';
 import RateLimitedUi from '../components/RateLimitedUi';
-import axios from "axios";
 import toast from "react-hot-toast";
 import NoteCard from '../components/NoteCard';
 import { Loader2 } from 'lucide-react';
+import api from '../lib/axios.js';
+import NotesnotFound from '../components/NotesnotFound.jsx';
+
 
 const HomePage = () => {
   const [rateLimit, setRateLimit] = useState(false)
@@ -14,7 +16,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/v1/notes");
+        const res = await api.get("/notes");
         setNotes(res.data);
         setRateLimit(false);
       } catch (error) {
@@ -46,15 +48,13 @@ const HomePage = () => {
         ) : notes.length > 0 && !rateLimit ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             {notes.map((note) => (
-              <NoteCard key={note._id} note={note} />
+              <NoteCard key={note._id} note={note} setNotes={setNotes} />
             ))}
           </div>
         ) : (
-          !rateLimit && (
-            <div className='text-center py-20'>
-              <p className='text-base-content/70'>No notes found. Create your first note!</p>
-            </div>
-          )
+          !rateLimit && <NotesnotFound />
+            
+          
         )}
       </main>
     </div>
