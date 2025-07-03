@@ -7,6 +7,7 @@ import authRouter from "./routes/auth.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.routes.js";
+import { appLimiter } from "./middlewares/rateLimit.middleware.js";
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
+
+app.use(appLimiter);
 
 //Routes
 app.use('/api/v1/auth', authRouter);
