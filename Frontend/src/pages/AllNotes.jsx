@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import Navbar from '../components/Navbar';
-import RateLimitedUi from '../components/RateLimitedUi';
+import Navbar from '../components/Navbar.jsx';
+import RateLimitedUi from '../components/RateLimitedUi.jsx';
 import toast from "react-hot-toast";
-import NoteCard from '../components/NoteCard';
+import NoteCard from '../components/NoteCard.jsx';
 import { Loader2 } from 'lucide-react';
 import api from '../lib/axios.js';
 import NotesnotFound from '../components/NotesnotFound.jsx';
 
 
-const HomePage = () => {
+const AllNotes = () => {
   const [rateLimit, setRateLimit] = useState(false)
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,4 +61,4 @@ const HomePage = () => {
   )
 }
 
-export default HomePage;
+export default AllNotes;

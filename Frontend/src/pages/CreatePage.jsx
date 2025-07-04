@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from "react-router-dom"; 
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import toast from "react-hot-toast";
 import api from '../lib/axios.js';
@@ -27,10 +27,11 @@ const CreatePage = () => {
     setLoading(true);
 
     try {
+
       // Send POST request to create note
       await api.post("/notes", { title, content });
       toast.success("Note Created Successfully.");
-      navigate("/"); // Navigate to home after success
+      navigate("/all-notes"); // Navigate to home after success
     } catch (error) {
       // Handle specific rate limit error
       if (error.response?.status === 429) {
@@ -55,7 +56,7 @@ const CreatePage = () => {
   return (
     <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
       <div className="w-full max-w-xl">
-        
+
         {/* Back Button */}
         <Link to="/" className="flex items-center gap-2 text-sm text-primary mb-6 hover:underline">
           <ArrowLeft className="size-4" />
@@ -64,11 +65,11 @@ const CreatePage = () => {
 
         {/* Card Container */}
         <div className="bg-base-100 shadow rounded-xl p-6">
-          
+
           <h2 className="text-2xl font-semibold mb-6">Create New Note</h2>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            
+
             {/* Title Input */}
             <div>
               <label className="block mb-1 font-medium">Title</label>
