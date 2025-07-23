@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create a reusable axios instance with base settings
 const api = axios.create({
-  baseURL: "http://localhost:3000/api/v1/",  // Base URL for all API requests
+  baseURL: import.meta.env.VITE_API_BASE_URL,  // Base URL for all API requests
   withCredentials: true,                     // Send cookies along with requests (helps with authentication if needed)
 });
 
