@@ -8,12 +8,13 @@ import errorMiddleware from "./middlewares/error.middleware.js";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.routes.js";
 import { appLimiter } from "./middlewares/rateLimit.middleware.js";
+import { PORT } from "./config/env.js";
 
 const app = express();
 
 //Middlewares
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: `${PORT}`,
      credentials: true
 }));
 
