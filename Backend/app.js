@@ -14,7 +14,7 @@ const app = express();
 
 //Middlewares
 app.use(cors({
-    origin: `${PORT}`,
+    origin: `${process.env.FRONTEND_URL,PORT}`,
      credentials: true
 }));
 
