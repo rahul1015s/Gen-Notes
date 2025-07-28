@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, LogIn, UserPlus, LogOut } from 'lucide-react';
 
+
 const Navbar = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -8,6 +9,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
+    window.location.href = "/";
   };
 
   return (
