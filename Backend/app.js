@@ -14,8 +14,8 @@ const app = express();
 
 //Middlewares
 app.use(cors({
-    origin: `${process.env.FRONTEND_URL,PORT}`,
-     credentials: true
+    origin: process.env.FRONTEND_URL, // Remove PORT and fix template literal syntax
+    credentials: true
 }));
 
 

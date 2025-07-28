@@ -8,5 +8,6 @@ export const {
     DB_URI,
     JWT_SECRET,
     JWT_EXPIRE_IN,
+    FRONTEND_URL
 
 } = process.env;
