@@ -2,6 +2,8 @@
 
 Gen-Notes is a modern, secure, and lightning-fast note-taking web application built with a React frontend and a Node.js/Express/MongoDB backend.
 
+[![Watch Demo](https://img.youtube.com/vi/fh83O6oRxoA/maxresdefault.jpg)](https://youtu.be/fh83O6oRxoA?si=rPfVUEL4utsB9B7P)
+
 ## Features
 
 - User authentication (sign up, log in, log out)
