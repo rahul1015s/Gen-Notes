@@ -15,15 +15,19 @@ const app = express();
 
 const __dirname = path.resolve()
 
-//Middlewares
-if (process.env.NODE_ENV !== "production") {
-    app.use(cors({
-    origin: process.env.FRONTEND_URL, 
-    credentials: true
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // Allow Postman, curl, etc.
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
 }));
-
-}
-
 
 
 
