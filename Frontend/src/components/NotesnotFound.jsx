@@ -1,6 +1,8 @@
 import React from 'react'
 import { NotebookPen } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
+
+
 
 const NotesnotFound = () => {
     return (
