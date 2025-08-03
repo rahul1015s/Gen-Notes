@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import toast from "react-hot-toast";
 import api from '../lib/axios.js';
+import RichTextEditor from '../components/RichTextEditor.jsx';
 
 
 
@@ -83,7 +84,7 @@ const CreatePage = () => {
             </div>
 
             {/* Content Textarea */}
-            <div>
+            {/* <div>
               <label className="block mb-1 font-medium">Content</label>
               <textarea
                 placeholder="Write your note here..."
@@ -91,6 +92,11 @@ const CreatePage = () => {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
+            </div> */}
+
+            {/* Content Input via Editor */}
+            <div className="relative z-30 overflow-visible">
+              <RichTextEditor onChange={setContent} />
             </div>
 
             {/* Submit Button */}

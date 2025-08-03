@@ -12,6 +12,7 @@ Gen-Notes is a modern, secure, and lightning-fast note-taking web application bu
 - Rate limiting for security
 - Responsive UI with Tailwind CSS and DaisyUI
 - RESTful API
+- **Progressive Web App (PWA):** Installable, offline support, and mobile-friendly
 
 ## Project Structure
 
@@ -72,6 +73,10 @@ Frontend/
    ```
    The frontend will run on `http://localhost:5173`.
 
+3. **PWA Usage:**
+   - The app is PWA-ready. You can "Install" it from your browser for an app-like experience.
+   - Offline support and manifest are enabled via Vite PWA plugin.
+
 ## API Endpoints
 
 - `POST /api/v1/auth/sign-up` - Register a new user
@@ -83,6 +88,6 @@ Frontend/
 - `PUT /api/v1/notes/:id` - Update a note (authenticated)
 - `DELETE /api/v1/notes/:id` - Delete a note (authenticated)
 
+---
 
-
-Made with ❤️ for learning 
+Made with ❤️ for learning

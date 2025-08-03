@@ -4,6 +4,7 @@ import { ArrowLeftIcon, Loader2, Trash2Icon, PenSquareIcon, SaveIcon, XIcon } fr
 import toast from 'react-hot-toast';
 import api from '../lib/axios.js';
 import { formatDate } from '../lib/utils.js';
+import RichTextEditor from '../components/RichTextEditor.jsx';
 
 const NotedetailPage = () => {
   // State to hold note details
@@ -152,7 +153,7 @@ const NotedetailPage = () => {
                   />
                 </div>
 
-                {/* Content textarea */}
+                {/* Content textarea
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text font-medium">Content</span>
@@ -162,7 +163,19 @@ const NotedetailPage = () => {
                     value={note.content}
                     onChange={(e) => setNote({ ...note, content: e.target.value })}
                   />
+                </div> */}
+
+                {/* Rich Text Editor for content */}
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-medium">Content</span>
+                  </label>
+                  <RichTextEditor
+                    value={note.content}
+                    onChange={(html) => setNote({ ...note, content: html })}
+                  />
                 </div>
+
 
                 {/* Save/Cancel buttons */}
                 <div className="flex justify-end gap-3 pt-4">
@@ -202,9 +215,14 @@ const NotedetailPage = () => {
                 {/* Note content */}
                 <div className="prose max-w-none">
                   <div className="p-4 bg-base-200 rounded-lg">
-                    <pre className="whitespace-pre-wrap font-sans text-base">
+                    {/* <pre className="whitespace-pre-wrap font-sans text-base">
                       {note.content}
-                    </pre>
+                    </pre> */}
+                    <div
+                      className="prose max-w-none"
+                      dangerouslySetInnerHTML={{ __html: note.content }}
+                    />
+
                   </div>
                 </div>
               </>
