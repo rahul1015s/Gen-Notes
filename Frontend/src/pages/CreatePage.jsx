@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import toast from "react-hot-toast";
 import api from '../lib/axios.js';
-import RichTextEditor from '../components/RichTextEditor.jsx';
+import TiptapEditor from '../components/TiptapEditor.jsx';
 
 
 
@@ -95,9 +95,10 @@ const CreatePage = () => {
             </div> */}
 
             {/* Content Input via Editor */}
-            <div className="relative z-30 overflow-visible">
-              <RichTextEditor onChange={setContent} />
+            <div className="relative z-30 overflow-visible min-h-[400px]">
+              <TiptapEditor onChange={setContent} />
             </div>
+
 
             {/* Submit Button */}
             <div className="flex justify-end">

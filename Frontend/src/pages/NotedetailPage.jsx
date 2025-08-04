@@ -4,7 +4,7 @@ import { ArrowLeftIcon, Loader2, Trash2Icon, PenSquareIcon, SaveIcon, XIcon } fr
 import toast from 'react-hot-toast';
 import api from '../lib/axios.js';
 import { formatDate } from '../lib/utils.js';
-import RichTextEditor from '../components/RichTextEditor.jsx';
+import RichTextEditor from '../components/TiptapEditor.jsx';
 
 const NotedetailPage = () => {
   // State to hold note details

@@ -4,10 +4,12 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-    define: {
-    global: 'window', 
+  define: {
+    global: 'window',
   },
-  plugins: [react(), tailwindcss(),
+  plugins: [
+    react(),
+    tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
@@ -22,31 +24,34 @@ export default defineConfig({
           {
             src: '/favicon/favicon-96x96.png',
             sizes: '96x96',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/favicon/apple-touch-icon.png',
             sizes: '180x180',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/favicon/web-app-manifest-192x192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'maskable'
+            purpose: 'maskable',
           },
           {
             src: '/favicon/web-app-manifest-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'maskable'
+            purpose: 'maskable',
           },
-        ]
+        ],
       },
       includeAssets: ['favicon/*.png', 'favicon/*.ico', 'favicon/*.svg'],
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
-      }
-    })
-  ]
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+      },
+    }),
+  ],
+  optimizeDeps: {
+    include: ['immutable'],
+  },
 })
