@@ -1,35 +1,49 @@
 import mongoose from "mongoose";
 
-//define a new schema for user collection
-
 const userSchema = new mongoose.Schema({
-    //name field
     name: {
         type: String,
         required: [true, "User name is required"],
-        trim: true, // Remove leading/trailing whitespacce
+        trim: true,
         minLength: 2,
         maxLength: 50,
     },
-
-    //Email field
     email: {
         type: String,
         required: [true, "Email is required."],
         unique: true,
         lowercase: true,
-        match:  [/\S+@\S+\.\S+/, 'Please fill a valid email address'] // Validates email format
+        match: [/\S+@\S+\.\S+/, 'Please fill a valid email address']
     },
-
-    //Password field
     password: {
         type: String,
         required: [true, "User password is required"],
         minLength: 6
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    otp: {
+        type: String,
+        default: null,
+    },
+    otpExpires: {
+        type: Date,
+        default: null,
+    },
+    resetPasswordToken: {
+        type: String,
+        default: null,
+    },
+    resetPasswordExpires: {
+        type: Date,
+        default: null,
     }
-}, {timestamps: true});// Automatically adds createdAt and updatedAt timestamps
+}, { timestamps: true });
 
-// Creating the user model from schema
+// Index for OTP expiration (automatic cleanup)
+userSchema.index({ otpExpires: 1 }, { expireAfterSeconds: 0 });
 
 const User = mongoose.model('User', userSchema);
 

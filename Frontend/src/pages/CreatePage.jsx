@@ -5,8 +5,6 @@ import toast from "react-hot-toast";
 import api from '../lib/axios.js';
 import TiptapEditor from '../components/TiptapEditor.jsx';
 
-
-
 const CreatePage = () => {
   // State variables for form inputs & loading state
   const [title, setTitle] = useState("");
@@ -28,7 +26,6 @@ const CreatePage = () => {
     setLoading(true);
 
     try {
-
       // Send POST request to create note
       await api.post("/notes", { title, content });
       toast.success("Note Created Successfully.");
@@ -83,22 +80,15 @@ const CreatePage = () => {
               />
             </div>
 
-            {/* Content Textarea */}
-            {/* <div>
-              <label className="block mb-1 font-medium">Content</label>
-              <textarea
-                placeholder="Write your note here..."
-                className="textarea textarea-bordered w-full min-h-[120px]"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-              />
-            </div> */}
-
             {/* Content Input via Editor */}
-            <div className="relative z-30 overflow-visible min-h-[400px]">
-              <TiptapEditor onChange={setContent} />
+            <div>
+              <label className="block mb-2 font-medium text-lg">Content</label>
+              <TiptapEditor
+                value={content}
+                onChange={setContent}
+                height="400px"
+              />
             </div>
-
 
             {/* Submit Button */}
             <div className="flex justify-end">

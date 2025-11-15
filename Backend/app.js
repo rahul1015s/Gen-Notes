@@ -1,7 +1,5 @@
 import express from "express";
 import notesRouter from "./routes/notes.routes.js";
-
-
 import cors from "cors";
 import authRouter from "./routes/auth.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
@@ -12,28 +10,13 @@ import path from "path"
 
 const app = express();
 
-
 const __dirname = path.resolve()
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
-
+// Use only ONE CORS configuration - remove the other one
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Allow Postman, curl, etc.
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: "http://localhost:5173", // your frontend dev URL
   credentials: true
 }));
-
-// app.use(cors({
-//   origin: "http://localhost:5173", // your frontend dev URL
-//   credentials: true
-// }));
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -54,14 +37,6 @@ if (process.env.NODE_ENV === "production") {
     })
 }
 
-
-
 app.use(errorMiddleware);
-
-// app.get('/', (req, res) => {
-//     res.send('Hello world!')
-// })
-
-
 
 export default app;
