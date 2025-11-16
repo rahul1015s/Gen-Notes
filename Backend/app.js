@@ -14,7 +14,7 @@ const __dirname = path.resolve()
 
 // Use only ONE CORS configuration - remove the other one
 app.use(cors({
-  origin: "http://localhost:5173", // your frontend dev URL
+  origin: "https://gennotes.vercel.app", // your frontend dev URL
   credentials: true
 }));
 
