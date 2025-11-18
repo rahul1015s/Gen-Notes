@@ -3,13 +3,7 @@
   "builds": [
     {
       "src": "startServer.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "data/db.sqlite",
-          "config/*.json"
-        ]
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
