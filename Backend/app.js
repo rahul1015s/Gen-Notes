@@ -1,57 +1,67 @@
 import express from "express";
 import notesRouter from "./routes/notes.routes.js";
+
+
 import cors from "cors";
 import authRouter from "./routes/auth.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.routes.js";
 import { appLimiter } from "./middlewares/rateLimit.middleware.js";
-import path from "path";
+import path from "path"
 
 const app = express();
 
-const __dirname = path.resolve();
 
-// CORS Configuration
-const corsOptions = {
-  origin: [
-    "https://gennotes.vercel.app",
-    "https://www.gennotes.vercel.app",
-    "http://localhost:5173"
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
-};
+const __dirname = path.resolve()
 
-app.use(cors(corsOptions));
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
 
-// Handle OPTIONS requests BEFORE rate limiting
-app.options('*', cors(corsOptions));
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // Allow Postman, curl, etc.
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
+
+// app.use(cors({
+//   origin: "http://localhost:5173", // your frontend dev URL
+//   credentials: true
+// }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// Apply rate limiting (will skip OPTIONS due to our updated limiter)
 app.use(appLimiter);
 
-// API Routes
+//Routes
 app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/users', userRouter);
+app.use('/api/v1/users', userRouter)
 app.use('/api/v1/notes', notesRouter);
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "Frontend/dist")));
+app.use(express.static(path.join(__dirname, "../Frontend/dist")))
 
-// Client-side routing
-app.get("*", (req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    return next();
-  }
-  res.sendFile(path.join(__dirname, "Frontend/dist/index.html"));
-});
+if (process.env.NODE_ENV === "production") {
+    app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "../Frontend", "dist", "index.html"))
+    })
+}
+
+
 
 app.use(errorMiddleware);
+
+// app.get('/', (req, res) => {
+//     res.send('Hello world!')
+// })
+
+
 
 export default app;
