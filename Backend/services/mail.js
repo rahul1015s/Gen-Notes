@@ -8,19 +8,19 @@ import {
 // Email configuration
 const emailConfig = {
   appName: process.env.APP_NAME || 'GenNotes',
-  supportEmail: process.env.SUPPORT_EMAIL || process.env.SMTP_USER,
-  fromEmail: process.env.FROM_EMAIL || process.env.SMTP_USER,
+  supportEmail: process.env.SUPPORT_EMAIL || process.env.MAIL_USER, // Changed to MAIL_USER
+  fromEmail: process.env.FROM_EMAIL || process.env.MAIL_USER, // Changed to MAIL_USER
   fromName: process.env.FROM_NAME || 'GenNotes'
 };
 
-// Create transporter
+// Create transporter with MAIL_* variables
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.zoho.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false,
+  host: process.env.MAIL_HOST || 'smtp.zoho.in', // Changed to MAIL_HOST
+  port: process.env.MAIL_PORT || 587, // Changed to MAIL_PORT
+  secure: process.env.MAIL_SECURE === 'true' || false, // Added MAIL_SECURE
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.MAIL_USER, // Changed to MAIL_USER
+    pass: process.env.MAIL_PASS, // Changed to MAIL_PASS
   },
 });
 
@@ -33,7 +33,7 @@ transporter.verify(function (error, success) {
   }
 });
 
-// Base email sender
+// ... rest of your email functions remain the same
 const sendEmail = async (to, subject, html) => {
   try {
     const mailOptions = {
@@ -41,7 +41,6 @@ const sendEmail = async (to, subject, html) => {
       to,
       subject,
       html,
-      // Text fallback for email clients that don't support HTML
       text: html.replace(/<[^>]*>/g, ''),
     };
 
@@ -54,7 +53,6 @@ const sendEmail = async (to, subject, html) => {
   }
 };
 
-// Specific email functions
 export const sendResetPasswordEmail = async (email, name, resetURL) => {
   const html = forgotPasswordTemplate(
     name, 
@@ -99,7 +97,6 @@ export const sendWelcomeVerificationEmail = async (email, name) => {
   );
 };
 
-// Export all functions as default
 export default {
   sendResetPasswordEmail,
   sendOTPVerificationEmail,
