@@ -17,7 +17,7 @@ const AllNotes = () => {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const res = await api.get("/notes");
+        const res = await api.get("/api/v1/notes");
         setNotes(res.data);
         setRateLimit(false);
       } catch (error) {

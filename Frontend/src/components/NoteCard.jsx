@@ -32,7 +32,7 @@ const NoteCard = ({ note, setNotes }) => {
     setIsDeleting(true);
     
     try {
-      await api.delete(`/notes/${id}`);
+      await api.delete(`/api/v1/notes/${id}`);
       setNotes((prev) => prev.filter(note => note._id !== id));
       toast.success("Note deleted successfully");
     } catch (error) {

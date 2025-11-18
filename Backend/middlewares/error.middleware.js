@@ -11,7 +11,7 @@ const errorMiddleware = (err, req, res, next) => {
         console.log(err);
 
         //handle invalid MongoDB object (e.g., malformed _id in URL)
-        if(err.name === 'CateError') {
+        if(err.name === 'CastError') {
             const message = 'Resource not found';
             error.statusCode = 404;
         }

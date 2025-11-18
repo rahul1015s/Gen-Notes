@@ -8,7 +8,7 @@ export default function ForgotPassword() {
       try {
         const email = formData.get("email");
 
-        const res = await api.post("/auth/forgot-password", { email });
+       const res = await api.post("/api/v1/auth/forgot-password", { email });
 
         toast.success(res.data.message || "Password reset email sent!");
       } catch (err) {

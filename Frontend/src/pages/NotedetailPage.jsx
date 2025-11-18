@@ -29,7 +29,7 @@ const NotedetailPage = () => {
   useEffect(() => {
     const fetchNote = async () => {
       try {
-        const res = await api.get(`/notes/${id}`);
+        const res = await api.get(`/api/v1/notes/${id}`);
         setNote(res.data); // Store note data in state
       } catch (error) {
         toast.error("Failed to fetch the note"); // Show error toast
@@ -43,7 +43,7 @@ const NotedetailPage = () => {
   // Handle note deletion
   const handleDelete = async () => {
     try {
-      await api.delete(`/notes/${id}`);
+      await api.delete(`/api/v1/notes/${id}`);
       toast.success("Note deleted successfully");
       navigate('/'); // Go back to homepage after deletion
     } catch (error) {
@@ -60,7 +60,7 @@ const NotedetailPage = () => {
 
     setSaving(true);
     try {
-      await api.put(`/notes/${id}`, note);
+      await api.put(`/api/v1/notes/${id}`, note);
       toast.success("Note updated successfully");
       setIsEditing(false); // Exit edit mode
     } catch (error) {

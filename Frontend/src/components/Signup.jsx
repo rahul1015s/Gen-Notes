@@ -26,7 +26,7 @@ export default function Signup() {
                 };
 
                 // API call to signup
-                const res = await api.post("/auth/sign-up", userData);
+                const res = await api.post("/api/v1/auth/sign-up", userData);
 
                 if (res.data.success) {
                     if (res.data.data.requiresVerification) {

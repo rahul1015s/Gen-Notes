@@ -32,7 +32,7 @@ export default function OTPVerification() {
             try {
                 const otp = formData.get("otp");
 
-                const res = await api.post("/auth/verify-otp", { 
+                const res = await api.post("/api/v1/auth/verify-otp", { 
                     email, 
                     otp 
                 });
@@ -53,7 +53,7 @@ export default function OTPVerification() {
 
     const handleResendOTP = async () => {
         try {
-            await api.post("/auth/resend-otp", { email });
+            await api.post("/api/v1/auth/resend-otp", { email });
             setResendCooldown(60);
             toast.success("Verification code sent successfully!");
         } catch (err) {

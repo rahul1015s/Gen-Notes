@@ -21,7 +21,7 @@ export default function Login() {
                 const email = formData.get("email");
                 const password = formData.get("password");
 
-                const res = await api.post("/auth/sign-in", { email, password });
+                const res = await api.post("/api/v1/auth/sign-in", { email, password });
 
                 // Check if user needs verification
                 if (res.data?.data?.requiresVerification) {

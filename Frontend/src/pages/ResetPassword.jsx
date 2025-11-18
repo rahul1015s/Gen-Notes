@@ -12,7 +12,7 @@ export default function ResetPassword() {
       try {
         const password = formData.get("password");
 
-        const res = await api.post(`/auth/reset-password/${token}`, {
+        const res = await api.post(`/api/v1/auth/reset-password/${token}`, {
           password,
         });
 

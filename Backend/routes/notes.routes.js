@@ -5,7 +5,7 @@ import authorize from "../middlewares/auth.middleware.js";
 
 const notesRouter = Router();
 
-//Appy authorize to all routes at once
+// Apply authorize to all routes at once
 notesRouter.use(authorize);
 
 notesRouter.post('/', createNote);
