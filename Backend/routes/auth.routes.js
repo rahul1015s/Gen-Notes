@@ -12,6 +12,16 @@ import { authLimiter } from "../middlewares/rateLimit.middleware.js";
 
 const authRouter = Router();
 
+// Handle OPTIONS for auth routes specifically
+authRouter.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', 'https://gennotes.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.status(200).end();
+});
+
+// Apply rate limiting only to actual API calls, not OPTIONS
 authRouter.post('/sign-up', authLimiter, signUp);
 authRouter.post('/sign-in', authLimiter, signIn);
 authRouter.post('/sign-out', signOut);

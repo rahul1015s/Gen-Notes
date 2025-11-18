@@ -6,36 +6,51 @@ import errorMiddleware from "./middlewares/error.middleware.js";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.routes.js";
 import { appLimiter } from "./middlewares/rateLimit.middleware.js";
-import path from "path"
+import path from "path";
 
 const app = express();
 
-const __dirname = path.resolve()
+const __dirname = path.resolve();
 
-// Use only ONE CORS configuration - remove the other one
-app.use(cors({
-  origin: "https://gennotes.vercel.app", // your frontend dev URL
-  credentials: true
-}));
+// CORS Configuration
+const corsOptions = {
+  origin: [
+    "https://gennotes.vercel.app",
+    "https://www.gennotes.vercel.app",
+    "http://localhost:5173"
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+};
+
+app.use(cors(corsOptions));
+
+// Handle OPTIONS requests BEFORE rate limiting
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// Apply rate limiting (will skip OPTIONS due to our updated limiter)
 app.use(appLimiter);
 
-//Routes
+// API Routes
 app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/users', userRouter)
+app.use('/api/v1/users', userRouter);
 app.use('/api/v1/notes', notesRouter);
 
-app.use(express.static(path.join(__dirname, "../Frontend/dist")))
+// Serve static files
+app.use(express.static(path.join(__dirname, "Frontend/dist")));
 
-if (process.env.NODE_ENV === "production") {
-    app.get("*", (req, res) => {
-        res.sendFile(path.join(__dirname, "../Frontend", "dist", "index.html"))
-    })
-}
+// Client-side routing
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, "Frontend/dist/index.html"));
+});
 
 app.use(errorMiddleware);
 
