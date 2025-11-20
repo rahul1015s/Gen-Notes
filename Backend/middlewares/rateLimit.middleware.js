@@ -10,7 +10,7 @@ export const appLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes window
     max: (req) => {
         if (skipOptions(req)) return 0; // Skip rate limiting for OPTIONS
-        return 60; // Limit each IP to 60 requests per 15 minutes
+        return 500; // Limit each IP to 60 requests per 15 minutes
     },
     standardHeaders: true,    // Return rate limit info in standard RateLimit-* headers
     legacyHeaders: false,     // Disable deprecated X-RateLimit-* headers

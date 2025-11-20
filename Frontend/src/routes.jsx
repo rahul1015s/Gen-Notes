@@ -25,15 +25,16 @@ export const router = createBrowserRouter([
       { path: "log-in", element: <Login /> },
       { path: "verify-otp", element: <OTPVerification /> },
 
-      // 🔥 Forgot + Reset Password Routes
+      // Forgot + Reset Password Routes
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password/:token", element: <ResetPassword /> },
 
-      // 🔥 Protected Routes
+      // Protected Routes
       {
         element: <PrivateRoute />,
         children: [
           { path: "all-notes", element: <AllNotes /> },
+           { path: "all-notes/:folderId", element: <AllNotes /> },
           { path: "create", element: <CreatePage /> },
           { path: "note/:id", element: <NotedetailPage /> },
         ],

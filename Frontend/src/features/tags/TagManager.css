@@ -1,0 +1,175 @@
+/* Tag Manager Styles */
+
+.tag-manager {
+  width: 100%;
+}
+
+.create-tag-form {
+  padding: 1rem;
+  background: hsl(var(--b2));
+  border-radius: 0.5rem;
+}
+
+.create-tag-form > div {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.tag-item {
+  padding: 1rem;
+  background: hsl(var(--b1));
+  border: 1px solid hsl(var(--b3));
+  border-left: 4px solid;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.tag-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tag-edit {
+  display: flex;
+  gap: 0.5rem;
+  flex-direction: column;
+}
+
+.tag-edit input {
+  width: 100%;
+}
+
+.tag-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tag-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.tag-color-dot {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: hsl(var(--bc));
+  flex: 1;
+  word-break: break-word;
+}
+
+.tag-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: hsl(var(--b2));
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: hsl(var(--bc) / 0.7);
+  flex-shrink: 0;
+}
+
+.tag-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+.tag-actions button {
+  padding: 0.25rem;
+  min-height: auto;
+  height: auto;
+}
+
+/* Tag Selector Component */
+.tag-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: hsl(var(--b2));
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  animation: slideIn 0.2s ease-out;
+}
+
+.tag-badge-color {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-badge-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: hsl(var(--bc) / 0.6);
+  transition: color 0.15s;
+}
+
+.tag-badge-remove:hover {
+  color: hsl(var(--bc));
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Tag Suggestions */
+.tag-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: hsl(var(--b1));
+  border: 1px solid hsl(var(--b3));
+  border-top: none;
+  border-radius: 0 0 0.5rem 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.tag-suggestion {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.tag-suggestion:hover {
+  background: hsl(var(--b2));
+}

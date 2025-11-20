@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Trash2Icon } from 'lucide-react';
+import { Trash2Icon, PinIcon } from 'lucide-react';
 import { formatDate } from '../lib/utils.js';
 import api from '../lib/axios.js';
 import toast from 'react-hot-toast';
 import DOMPurify from 'dompurify';
+import pinService from '../services/pinService.js';
 
 const bgColors = [
   'bg-yellow-100 text-yellow-900',
@@ -15,10 +16,12 @@ const bgColors = [
   'bg-orange-100 text-orange-900'
 ];
 
-const NoteCard = ({ note, setNotes }) => {
+const NoteCard = ({ note, setNotes, isPinned = false, onPinChange }) => {
   const [showModal, setShowModal] = useState(false);
   const [bgClass, setBgClass] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPinning, setIsPinning] = useState(false);
+  const [pinned, setPinned] = useState(isPinned);
 
   // Assign consistent background color based on note ID
   useEffect(() => {
@@ -26,6 +29,37 @@ const NoteCard = ({ note, setNotes }) => {
     const colorIndex = hash % bgColors.length;
     setBgClass(bgColors[colorIndex]);
   }, [note._id]);
+
+  const handleTogglePin = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsPinning(true);
+
+    try {
+      const newPinState = !pinned;
+      if (newPinState) {
+        // Pin the note
+        await pinService.pinNote(note._id);
+        setPinned(true);
+        toast.success('Note pinned!');
+      } else {
+        // Unpin the note
+        await pinService.unpinNote(note._id);
+        setPinned(false);
+        toast.success('Note unpinned');
+      }
+
+      // Call parent callback to refresh pinned notes
+      if (onPinChange) {
+        onPinChange(note._id, newPinState);
+      }
+    } catch (error) {
+      console.error('Pin error:', error);
+      toast.error(pinned ? 'Failed to unpin note' : 'Failed to pin note');
+    } finally {
+      setIsPinning(false);
+    }
+  };
 
   const handleDelete = async (e, id) => {
     e.preventDefault();
@@ -73,17 +107,32 @@ const NoteCard = ({ note, setNotes }) => {
               {formatDate(note.createdAt)}
             </span>
 
-            <button
-              className="btn btn-ghost btn-xs text-error hover:bg-error/10"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowModal(true);
-              }}
-              aria-label="Delete note"
-            >
-              <Trash2Icon className="size-4" />
-            </button>
+            <div className="flex gap-2">
+              <button
+                className={`btn btn-ghost btn-xs ${pinned ? 'text-error' : 'text-base-content opacity-50'} hover:bg-base-300`}
+                onClick={handleTogglePin}
+                disabled={isPinning}
+                title={pinned ? 'Unpin note' : 'Pin note'}
+                aria-label={pinned ? 'Unpin note' : 'Pin note'}
+              >
+                {isPinning ? (
+                  <span className="loading loading-spinner loading-xs"></span>
+                ) : (
+                  <PinIcon className={`size-4 ${pinned ? 'fill-current' : ''}`} />
+                )}
+              </button>
+              <button
+                className="btn btn-ghost btn-xs text-error hover:bg-error/10"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowModal(true);
+                }}
+                aria-label="Delete note"
+              >
+                <Trash2Icon className="size-4" />
+              </button>
+            </div>
           </div>
         </div>
       </Link>

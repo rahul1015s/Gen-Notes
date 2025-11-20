@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/axios.js';
 import { formatDate } from '../lib/utils.js';
 import RichTextEditor from '../components/TiptapEditor.jsx';
+import DOMPurify from 'dompurify';
 
 const NotedetailPage = () => {
   // State to hold note details
@@ -23,50 +24,64 @@ const NotedetailPage = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   const navigate = useNavigate();
-  const { id } = useParams(); // Get note ID from URL params
+  const { id } = useParams();
 
   // Fetch note details when component mounts or 'id' changes
   useEffect(() => {
     const fetchNote = async () => {
       try {
         const res = await api.get(`/api/v1/notes/${id}`);
-        setNote(res.data); // Store note data in state
+        setNote(res.data);
       } catch (error) {
-        toast.error("Failed to fetch the note"); // Show error toast
+        toast.error("Failed to fetch the note");
+        navigate('/all-notes');
       } finally {
-        setLoading(false); // Hide loader
+        setLoading(false);
       }
     };
     fetchNote();
-  }, [id]);
+  }, [id, navigate]);
 
   // Handle note deletion
   const handleDelete = async () => {
     try {
       await api.delete(`/api/v1/notes/${id}`);
       toast.success("Note deleted successfully");
-      navigate('/'); // Go back to homepage after deletion
+      navigate('/all-notes');
     } catch (error) {
-      toast.error("Failed to delete note");
+      toast.error(error.response?.data?.message || "Failed to delete note");
     }
   };
 
   // Handle saving the updated note
   const handleSave = async () => {
-    if (!note.title.trim() || !note.content.trim()) {
-      toast.error("Title and content cannot be empty");
+    if (!note.title.trim()) {
+      toast.error("Title cannot be empty");
+      return;
+    }
+
+    // Check if content has actual text (not just empty HTML)
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = note.content;
+    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+    
+    if (!textContent.trim()) {
+      toast.error("Content cannot be empty");
       return;
     }
 
     setSaving(true);
     try {
-      await api.put(`/api/v1/notes/${id}`, note);
+      await api.put(`/api/v1/notes/${id}`, {
+        title: note.title.trim(),
+        content: note.content
+      });
       toast.success("Note updated successfully");
-      setIsEditing(false); // Exit edit mode
+      setIsEditing(false);
     } catch (error) {
-      toast.error("Failed to save changes");
+      toast.error(error.response?.data?.message || "Failed to save changes");
     } finally {
-      setSaving(false); // Re-enable Save button
+      setSaving(false);
     }
   };
 
@@ -80,21 +95,21 @@ const NotedetailPage = () => {
   }
 
   // Show message if note not found
-  if (!note) {
+  if (!note || !note._id) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-base-content/80">Note not found</p>
+        <p className="text-base-content/80 text-lg">Note not found</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-base-100">
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto max-w-4xl px-4 py-8">
 
         {/* Header with Back button and actions */}
         <div className="flex justify-between items-center mb-6">
-          <Link to="/" className="btn btn-ghost">
+          <Link to="/all-notes" className="btn btn-ghost gap-2">
             <ArrowLeftIcon className="size-5" />
             Back to Notes
           </Link>
@@ -103,14 +118,14 @@ const NotedetailPage = () => {
           {!isEditing && (
             <div className="flex gap-2">
               <button
-                className="btn btn-primary"
+                className="btn btn-primary gap-2"
                 onClick={() => setIsEditing(true)}
               >
                 <PenSquareIcon className="size-5" />
-                Edit Note
+                Edit
               </button>
               <button
-                className="btn btn-error btn-outline"
+                className="btn btn-error btn-outline gap-2"
                 onClick={() => setShowDeleteModal(true)}
               >
                 <Trash2Icon className="size-5" />
@@ -121,19 +136,19 @@ const NotedetailPage = () => {
         </div>
 
         {/* Note Content Card */}
-        <div className="card bg-base-100 border border-base-200">
-          <div className="card-body p-6">
+        <div className="card bg-base-100 border border-base-200 shadow-md">
+          <div className="card-body p-6 space-y-6">
 
             {/* Edit Mode */}
             {isEditing ? (
-              <div className="space-y-6">
-
+              <>
                 {/* Editing header with close button */}
                 <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Editing Note</h2>
+                  <h2 className="text-2xl font-semibold">Edit Note</h2>
                   <button
                     className="btn btn-ghost btn-circle"
                     onClick={() => setIsEditing(false)}
+                    disabled={saving}
                   >
                     <XIcon className="size-5" />
                   </button>
@@ -142,46 +157,37 @@ const NotedetailPage = () => {
                 {/* Title input */}
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium">Title</span>
+                    <span className="label-text font-medium">Title <span className="text-error">*</span></span>
                   </label>
                   <input
                     type="text"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full focus:input-primary"
                     value={note.title}
                     onChange={(e) => setNote({ ...note, title: e.target.value })}
+                    placeholder="Note title"
                     autoFocus
+                    disabled={saving}
                   />
                 </div>
-
-                {/* Content textarea
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Content</span>
-                  </label>
-                  <textarea
-                    className="textarea textarea-bordered h-64 w-full"
-                    value={note.content}
-                    onChange={(e) => setNote({ ...note, content: e.target.value })}
-                  />
-                </div> */}
 
                 {/* Rich Text Editor for content */}
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium">Content</span>
+                    <span className="label-text font-medium">Content <span className="text-error">*</span></span>
                   </label>
                   <RichTextEditor
                     value={note.content}
                     onChange={(html) => setNote({ ...note, content: html })}
+                    height="500px"
                   />
                 </div>
 
-
                 {/* Save/Cancel buttons */}
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex justify-end gap-3 pt-4 border-t border-base-200">
                   <button
                     className="btn btn-ghost"
                     onClick={() => setIsEditing(false)}
+                    disabled={saving}
                   >
                     Cancel
                   </button>
@@ -191,38 +197,44 @@ const NotedetailPage = () => {
                     disabled={saving}
                   >
                     {saving ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
                     ) : (
-                      <SaveIcon className="size-5" />
+                      <>
+                        <SaveIcon className="size-5" />
+                        Save Changes
+                      </>
                     )}
-                    Save Changes
                   </button>
                 </div>
-              </div>
+              </>
             ) : (
               // View Mode
               <>
-                <h1 className="card-title text-2xl mb-2">{note.title}</h1>
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">{note.title}</h1>
 
-                {/* Created and Updated dates */}
-                <div className="flex items-center gap-2 text-sm text-base-content/60 mb-4">
-                  <span>Created: {formatDate(note.createdAt)}</span>
-                  {note.updatedAt !== note.createdAt && (
-                    <span>• Updated: {formatDate(note.updatedAt)}</span>
-                  )}
+                  {/* Created and Updated dates */}
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-base-content/60">
+                    <span>📅 Created: {formatDate(note.createdAt)}</span>
+                    {note.updatedAt !== note.createdAt && (
+                      <span>✏️ Updated: {formatDate(note.updatedAt)}</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Note content */}
-                <div className="prose max-w-none">
+                <div className="divider"></div>
+                <div className="prose prose-sm max-w-none">
                   <div className="p-4 bg-base-200 rounded-lg">
-                    {/* <pre className="whitespace-pre-wrap font-sans text-base">
-                      {note.content}
-                    </pre> */}
                     <div
                       className="prose max-w-none"
-                      dangerouslySetInnerHTML={{ __html: note.content }}
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(note.content)
+                      }}
                     />
-
                   </div>
                 </div>
               </>
@@ -235,7 +247,11 @@ const NotedetailPage = () => {
           <dialog open className="modal modal-bottom sm:modal-middle">
             <div className="modal-box">
               <h3 className="font-bold text-lg">Delete Note?</h3>
-              <p className="py-4">Are you sure you want to delete this note? This action cannot be undone.</p>
+              <p className="py-4">
+                Are you sure you want to delete <strong>"{note.title}"</strong>? 
+                <br />
+                This action cannot be undone.
+              </p>
               <div className="modal-action">
                 <button
                   className="btn btn-ghost"
@@ -254,6 +270,9 @@ const NotedetailPage = () => {
                 </button>
               </div>
             </div>
+            <form method="dialog" className="modal-backdrop">
+              <button onClick={() => setShowDeleteModal(false)}>close</button>
+            </form>
           </dialog>
         )}
       </main>

@@ -5,6 +5,8 @@ import authRouter from "./routes/auth.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.routes.js";
+import folderRouter from "./routes/folder.routes.js";
+import tagRouter from "./routes/tag.routes.js";
 import { appLimiter } from "./middlewares/rateLimit.middleware.js";
 import path from "path";
 
@@ -40,6 +42,8 @@ app.use(appLimiter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/notes', notesRouter);
+app.use('/api/v1/folders', folderRouter);
+app.use('/api/v1/tags', tagRouter);
 
 // FIX 3: Remove or fix static file serving for Vercel
 // Remove these lines or conditionally enable them:
