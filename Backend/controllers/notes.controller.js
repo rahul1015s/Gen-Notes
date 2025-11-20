@@ -5,7 +5,6 @@ export async function getAllNotes(req, res) {
         // Get all notes - Only notes of logged-in user
         const notes = await Note.find({ userId: req.user._id })
             .populate('tags', 'name color')
-            .populate('folderId', 'name icon')
             .sort({ createdAt: -1 });
         res.status(200).json(notes);
     } catch (error) {
@@ -19,7 +18,7 @@ export async function getNoteById(req, res) {
         // Get single note - Must belong to logged-in user
         const note = await Note.findOne({ _id: req.params.id, userId: req.user._id })
             .populate('tags', 'name color')
-            .populate('folderId', 'name icon');
+            .populate('folderId', 'name icon _id');
         if (!note) return res.status(404).json({ message: "Note not found!" });
         res.json(note);
     } catch (error) {
@@ -46,7 +45,6 @@ export async function createNote(req, res) {
 
         await newNote.save();
         await newNote.populate('tags', 'name color');
-        await newNote.populate('folderId', 'name icon');
         
         res.status(201).json(newNote);
 
@@ -74,8 +72,7 @@ export async function updateNote(req, res) {
             updateData, 
             { new: true }
         )
-        .populate('tags', 'name color')
-        .populate('folderId', 'name icon');
+        .populate('tags', 'name color');
 
         if (!updatedNote) {
             return res.status(404).json({ message: "Note not found" });

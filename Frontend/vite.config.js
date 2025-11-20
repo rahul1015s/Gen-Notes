@@ -12,14 +12,35 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       manifest: {
-        name: 'Gen-Notes',
-        short_name: 'GenNotes',
-        description: 'OCR-powered secure note app',
-        start_url: '/',
-        display: 'standalone',
-        background_color: '#ffffff',
+        name: 'Apple Notes Clone',
+        short_name: 'Notes',
+        description: 'A beautiful, secure note-taking app inspired by Apple Notes',
         theme_color: '#0f172a',
+        background_color: '#ffffff',
+        display: 'standalone',
+        orientation: 'portrait-primary',
+        scope: '/',
+        start_url: '/',
+        categories: ['productivity'],
+        screenshots: [
+          {
+            src: '/favicon/web-app-manifest-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            form_factor: 'narrow'
+          },
+          {
+            src: '/favicon/web-app-manifest-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            form_factor: 'wide'
+          }
+        ],
         icons: [
           {
             src: '/favicon/favicon-96x96.png',
@@ -35,7 +56,19 @@ export default defineConfig({
             src: '/favicon/web-app-manifest-192x192.png',
             sizes: '192x192',
             type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/favicon/web-app-manifest-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'maskable',
+          },
+          {
+            src: '/favicon/web-app-manifest-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
           },
           {
             src: '/favicon/web-app-manifest-512x512.png',
@@ -47,8 +80,40 @@ export default defineConfig({
       },
       includeAssets: ['favicon/*.png', 'favicon/*.ico', 'favicon/*.svg'],
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: [
+          '**/*.{js,css,html,ico,png,svg,json}',
+          '**/*.woff',
+          '**/*.woff2'
+        ],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\./,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 3600 // 1 hour
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'fonts-cache',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 2592000 // 30 days
+              }
+            }
+          }
+        ]
       },
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      }
     }),
   ],
   optimizeDeps: {

@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import tagsService from "../../services/tagsService";
 import "./TagManager.css";
 
-export default function TagManager({ tags = [], onTagsChange }) {
+export default function TagManager({ tags = [], onTagsChange, selectedTag, onSelectTag }) {
   const [allTags, setAllTags] = useState(tags);
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("");
@@ -74,6 +74,8 @@ export default function TagManager({ tags = [], onTagsChange }) {
       const updated = allTags.filter((t) => t._id !== tagId);
       setAllTags(updated);
       onTagsChange?.(updated);
+      // Clear filter if deleted tag was selected
+      if (selectedTag === tagId) onSelectTag?.(null);
       toast.success("Tag deleted successfully");
     } catch (error) {
       toast.error(error.message || "Failed to delete tag");
@@ -125,78 +127,100 @@ export default function TagManager({ tags = [], onTagsChange }) {
         </div>
       </div>
 
-      {/* Tags List */}
+      {/* Tags List - Clickable */}
       {allTags.length > 0 ? (
-        <div className="tags-grid">
-          {allTags.map((tag) => (
-            <div
-              key={tag._id}
-              className="tag-item"
-              style={{ borderLeftColor: tag.color }}
-            >
-              {editingId === tag._id ? (
-                <div className="tag-edit">
-                  <input
-                    type="text"
-                    className="input input-bordered input-xs"
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    onKeyPress={(e) =>
-                      e.key === "Enter" && handleUpdateTag(tag._id)
-                    }
-                    disabled={isLoading}
-                    autoFocus
-                  />
-                  <button
-                    className="btn btn-xs btn-success"
-                    onClick={() => handleUpdateTag(tag._id)}
-                    disabled={isLoading}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="btn btn-xs btn-ghost"
-                    onClick={() => setEditingId(null)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div className="tag-content">
-                  <div className="tag-header">
-                    <span
-                      className="tag-color-dot"
-                      style={{ backgroundColor: tag.color }}
-                    ></span>
-                    <span className="tag-name">{tag.name}</span>
-                    <span className="tag-count">{tag.usageCount}</span>
+        <div className="flex flex-col gap-2">
+          {/* View as Filter Pills */}
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((tag) => (
+              <button
+                key={tag._id}
+                onClick={() => onSelectTag?.(selectedTag === tag._id ? null : tag._id)}
+                className={`badge badge-lg cursor-pointer transition ${
+                  selectedTag === tag._id 
+                    ? 'badge-primary ring-2 ring-offset-2' 
+                    : 'badge-outline'
+                }`}
+                style={{
+                  backgroundColor: selectedTag === tag._id ? tag.color : 'transparent',
+                  color: selectedTag === tag._id ? 'white' : 'inherit',
+                  borderColor: tag.color,
+                }}
+                title="Click to filter by this tag"
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+          
+          {/* Edit Mode */}
+          {allTags.length > 0 && (
+            <details className="collapse collapse-arrow border border-base-200">
+              <summary className="collapse-title text-sm cursor-pointer">Edit Tags</summary>
+              <div className="collapse-content space-y-3">
+                {allTags.map((tag) => (
+                  <div key={tag._id} className="flex gap-2 items-center">
+                    {editingId === tag._id ? (
+                      <>
+                        <input
+                          type="text"
+                          className="input input-bordered input-xs flex-1"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" && handleUpdateTag(tag._id)
+                          }
+                          disabled={isLoading}
+                          autoFocus
+                        />
+                        <button
+                          className="btn btn-xs btn-success"
+                          onClick={() => handleUpdateTag(tag._id)}
+                          disabled={isLoading}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="btn btn-xs btn-ghost"
+                          onClick={() => setEditingId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: tag.color }}
+                        ></span>
+                        <span className="flex-1 text-sm">{tag.name}</span>
+                        <button
+                          className="btn btn-xs btn-ghost gap-1"
+                          onClick={() => {
+                            setEditingId(tag._id);
+                            setEditingName(tag.name);
+                          }}
+                          disabled={isLoading}
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                        <button
+                          className="btn btn-xs btn-ghost text-error gap-1"
+                          onClick={() => handleDeleteTag(tag._id)}
+                          disabled={isLoading}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
                   </div>
-                  <div className="tag-actions">
-                    <button
-                      className="btn btn-xs btn-ghost gap-1"
-                      onClick={() => {
-                        setEditingId(tag._id);
-                        setEditingName(tag.name);
-                      }}
-                      disabled={isLoading}
-                    >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      className="btn btn-xs btn-ghost text-error gap-1"
-                      onClick={() => handleDeleteTag(tag._id)}
-                      disabled={isLoading}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+                ))}
+              </div>
+            </details>
+          )}
         </div>
       ) : (
-        <div className="text-center py-8 text-base-content/50">
+        <div className="text-center py-4 text-base-content/50">
           <p className="text-sm">No tags created yet</p>
         </div>
       )}
