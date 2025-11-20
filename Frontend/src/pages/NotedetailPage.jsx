@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, Trash2Icon, PenSquareIcon, SaveIcon, XIcon, ShareIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2Icon, PenSquareIcon, SaveIcon, XIcon, ShareIcon, Wifi, WifiOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/axios.js';
+import offlineSyncService from '../services/offlineSyncService.js';
 import { formatDate } from '../lib/utils.js';
 import RichTextEditor from '../components/TiptapEditor.jsx';
 import NoteLockSettings from '../components/NoteLockSettings.jsx';
@@ -19,15 +20,32 @@ const NotedetailPage = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const navigate = useNavigate();
   const { id } = useParams();
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchNote = async () => {
       try {
         const res = await api.get(`/api/v1/notes/${id}`);
         setNote(res.data);
+        
+        // Cache for offline access
+        await offlineSyncService.saveNoteOffline(res.data);
         
         // Check if note is locked
         try {
@@ -40,8 +58,23 @@ const NotedetailPage = () => {
           // No lock found
         }
       } catch (error) {
-        toast.error("Failed to load note");
-        navigate('/all-notes');
+        console.error('Fetch error:', error);
+        
+        // Try to load from offline storage
+        try {
+          const offlineNote = await offlineSyncService.getNoteOffline(id);
+          if (offlineNote) {
+            setNote(offlineNote);
+            toast.info('Showing offline copy of note');
+          } else {
+            toast.error("Failed to load note");
+            navigate('/all-notes');
+          }
+        } catch (err) {
+          console.error('Offline fallback failed:', err);
+          toast.error("Failed to load note");
+          navigate('/all-notes');
+        }
       } finally {
         setLoading(false);
       }
@@ -76,13 +109,66 @@ const NotedetailPage = () => {
 
     setSaving(true);
     try {
-      await api.put(`/api/v1/notes/${id}`, {
+      const updateData = {
         title: note.title.trim(),
         content: note.content
-      });
+      };
+
+      if (isOnline) {
+        // Update on server
+        await api.put(`/api/v1/notes/${id}`, updateData);
+        
+        // Update offline copy
+        await offlineSyncService.saveNoteOffline({
+          ...note,
+          ...updateData,
+          updatedAt: new Date()
+        });
+      } else {
+        // Save to offline storage
+        await offlineSyncService.saveNoteOffline({
+          ...note,
+          ...updateData,
+          updatedAt: new Date()
+        });
+        
+        // Add to sync queue
+        await offlineSyncService.addToSyncQueue(id, 'update', updateData);
+        
+        toast.success("📝 Changes saved offline!");
+        setIsEditing(false);
+        return;
+      }
+      
       toast.success("Note updated ✅");
       setIsEditing(false);
     } catch (error) {
+      console.error('Save error:', error);
+      
+      // If offline, save locally anyway
+      if (!isOnline) {
+        try {
+          await offlineSyncService.saveNoteOffline({
+            ...note,
+            title: note.title.trim(),
+            content: note.content,
+            updatedAt: new Date()
+          });
+          
+          const updateData = {
+            title: note.title.trim(),
+            content: note.content
+          };
+          await offlineSyncService.addToSyncQueue(id, 'update', updateData);
+          
+          toast.success("📝 Changes saved offline!");
+          setIsEditing(false);
+          return;
+        } catch (err) {
+          console.error('Offline save failed:', err);
+        }
+      }
+      
       toast.error(error.response?.data?.message || "Failed to save");
     } finally {
       setSaving(false);
@@ -129,6 +215,24 @@ const NotedetailPage = () => {
             <ArrowLeft className="size-5" />
             <span className="hidden sm:inline">Back</span>
           </Link>
+
+          <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+            isOnline 
+              ? 'bg-success/20 text-success' 
+              : 'bg-warning/20 text-warning'
+          }`}>
+            {isOnline ? (
+              <>
+                <Wifi className="size-3" />
+                Online
+              </>
+            ) : (
+              <>
+                <WifiOff className="size-3" />
+                Offline
+              </>
+            )}
+          </div>
 
           {!isEditing && (
             <div className="flex gap-2">

@@ -1,8 +1,14 @@
 {
-  "name": "GenNotes - Beautiful Note Taking",
+  "name": "GenNotes - Beautiful Note Taking App",
   "short_name": "GenNotes",
-  "description": "A beautiful, secure, and lightning-fast note-taking app inspired by Apple Notes",
+  "description": "A beautiful, secure, and lightning-fast note-taking app inspired by Apple Notes. Create, organize, and sync your notes across all devices with end-to-end encryption and offline support.",
   "icons": [
+    {
+      "src": "/favicon/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/favicon/favicon-96x96.png",
       "sizes": "96x96",
@@ -49,21 +55,64 @@
     "browser"
   ],
   "scope": "/",
-  "start_url": "/",
+  "start_url": "/all-notes",
   "orientation": "portrait-primary",
-  "categories": ["productivity"],
+  "dir": "ltr",
+  "lang": "en-US",
+  "categories": ["productivity", "utilities"],
+  "prefer_related_applications": false,
   "screenshots": [
     {
       "src": "/favicon/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "form_factor": "narrow"
+      "form_factor": "narrow",
+      "purpose": "any"
     },
     {
       "src": "/favicon/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "wide"
+      "form_factor": "wide",
+      "purpose": "any"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Create New Note",
+      "short_name": "New Note",
+      "description": "Quickly create a new note",
+      "url": "/create",
+      "icons": [
+        {
+          "src": "/favicon/favicon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "View All Notes",
+      "short_name": "All Notes",
+      "description": "View all your notes",
+      "url": "/all-notes",
+      "icons": [
+        {
+          "src": "/favicon/favicon-96x96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/create",
+    "method": "POST",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

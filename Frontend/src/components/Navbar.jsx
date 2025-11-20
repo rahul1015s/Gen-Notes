@@ -34,9 +34,11 @@ const Navbar = () => {
           {/* Left: Brand */}
           <div className="flex items-center gap-2 flex-1">
             <Link to="/" className="flex items-center gap-2 hover:opacity-70 transition">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">G</span>
-              </div>
+              <img 
+                src="/favicon/favicon.svg" 
+                alt="GenNotes" 
+                className="w-8 h-8 rounded-lg"
+              />
               <span className="text-xl font-semibold hidden sm:inline text-base-content">GenNotes</span>
             </Link>
           </div>

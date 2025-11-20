@@ -10,6 +10,8 @@ import {
   WifiOff,
   FolderPlus,
   ChevronRight,
+  Cloud,
+  CloudOff,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -21,17 +23,22 @@ import TagManager from '../features/tags/TagManager.jsx';
 import offlineSyncService from '../services/offlineSyncService.js';
 import foldersService, { FOLDER_ICONS } from '../services/foldersService.js';
 import pinService from '../services/pinService.js';
+import useOfflineSync from '../hooks/useOfflineSync.js';
 
 const AllNotes = () => {
   const navigate = useNavigate();
   const { folderId } = useParams();
+  
+  // Offline sync hook
+  const { isOnline, isSyncing, syncOfflineChanges } = useOfflineSync();
 
   // UI state
   const [loading, setLoading] = useState(true);
   const [rateLimit, setRateLimit] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnlineStatus, setIsOnlineStatus] = useState(navigator.onLine);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
 
   // Data state
   const [notes, setNotes] = useState([]);
@@ -55,14 +62,31 @@ const AllNotes = () => {
     const init = async () => {
       try {
         await offlineSyncService.initDB();
+        
+        // Check for pending syncs
+        const pending = await offlineSyncService.getPendingSyncItems();
+        if (mounted) {
+          setPendingSyncCount(pending.length);
+          console.log(`Pending sync items: ${pending.length}`);
+        }
       } catch (err) {
         console.error('Offline DB init failed', err);
       }
     };
     init();
 
-    const onOnline = () => setIsOnline(true);
-    const onOffline = () => setIsOnline(false);
+    const onOnline = () => {
+      setIsOnlineStatus(true);
+      // Auto-sync when coming online
+      syncOfflineChanges();
+      
+      // Refresh pending count
+      offlineSyncService.getPendingSyncItems().then(pending => {
+        if (mounted) setPendingSyncCount(pending.length);
+      });
+    };
+    
+    const onOffline = () => setIsOnlineStatus(false);
 
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
@@ -72,7 +96,7 @@ const AllNotes = () => {
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
     };
-  }, []);
+  }, [syncOfflineChanges]);
 
   // Fetch notes/folders/tags
   useEffect(() => {
@@ -93,6 +117,7 @@ const AllNotes = () => {
         setTags(tagsRes.data || []);
         setRateLimit(false);
 
+        // Cache notes for offline access
         for (const n of notesRes.data || []) {
           await offlineSyncService.saveNoteOffline(n);
         }
@@ -101,7 +126,33 @@ const AllNotes = () => {
           setRateLimit(true);
         } else {
           console.error('Fetch error', error);
-          toast.error('Failed to load data');
+          
+          // Try to load from offline storage (works both online and offline)
+          try {
+            const offlineNotes = await offlineSyncService.getAllNotesOffline();
+            if (offlineNotes && offlineNotes.length > 0) {
+              setNotes(offlineNotes);
+              if (!isOnlineStatus) {
+                toast.info(`📖 Showing ${offlineNotes.length} offline notes`);
+              } else {
+                toast.info('Using cached notes');
+              }
+            } else {
+              // No offline data available
+              if (!isOnlineStatus) {
+                toast.error('No offline data available. Notes will appear when you go online.');
+              } else {
+                toast.error('Failed to load data');
+              }
+            }
+          } catch (err) {
+            console.error('Failed to load offline notes', err);
+            if (!isOnlineStatus) {
+              toast.error('No offline data available');
+            } else {
+              toast.error('Failed to load data');
+            }
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -110,7 +161,7 @@ const AllNotes = () => {
 
     fetchAll();
     return () => (cancelled = true);
-  }, []);
+  }, [isOnlineStatus]);
 
   // Derived lists
   const displayNotes = useMemo(() => {
@@ -262,8 +313,8 @@ const AllNotes = () => {
             </div>
 
             {/* Status Badge */}
-            <div className={`badge gap-1 badge-sm ${isOnline ? 'badge-success' : 'badge-warning'}`}>
-              {isOnline ? (
+            <div className={`badge gap-1 badge-sm ${isOnlineStatus ? 'badge-success' : 'badge-warning'}`}>
+              {isOnlineStatus ? (
                 <>
                   <Wifi className="w-3 h-3" />
                   <span className="hidden sm:inline">Online</span>
@@ -275,6 +326,14 @@ const AllNotes = () => {
                 </>
               )}
             </div>
+            
+            {/* Sync Status */}
+            {pendingSyncCount > 0 && (
+              <div className="badge badge-info gap-1 badge-sm animate-pulse">
+                <CloudOff className="w-3 h-3" />
+                <span className="hidden sm:inline">{pendingSyncCount} pending</span>
+              </div>
+            )}
           </div>
 
           {/* Action Row */}
@@ -287,6 +346,39 @@ const AllNotes = () => {
               <Search className="w-4 h-4 text-base-content/40" />
               <span className="text-base-content/40 text-sm">Search</span>
             </button>
+
+            {/* Sync Button - Show when offline with pending items */}
+            {!isOnlineStatus && pendingSyncCount > 0 && (
+              <button
+                className="btn btn-outline btn-sm gap-1"
+                disabled={true}
+                title="Waiting to go online to sync"
+              >
+                <CloudOff className="w-4 h-4 animate-spin" />
+                <span className="hidden sm:inline">Waiting...</span>
+              </button>
+            )}
+            
+            {/* Manual Sync Button - Show when online with pending items */}
+            {isOnlineStatus && pendingSyncCount > 0 && (
+              <button
+                className="btn btn-info btn-sm gap-1"
+                onClick={syncOfflineChanges}
+                disabled={isSyncing}
+              >
+                {isSyncing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="hidden sm:inline">Syncing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Cloud className="w-4 h-4" />
+                    <span className="hidden sm:inline">Sync Now</span>
+                  </>
+                )}
+              </button>
+            )}
 
             {/* Create Buttons */}
             <button

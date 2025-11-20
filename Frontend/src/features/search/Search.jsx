@@ -1,5 +1,5 @@
 // Global Search Component with instant debounced search
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { debounce, extractTextFromHTML } from "../../utils/helpers";
 import searchService from "../../services/searchService";
@@ -16,12 +16,25 @@ export default function GlobalSearch({ notes, onSelectNote, onClose }) {
   const [results, setResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
+  const containerRef = useRef(null);
 
   // Load search history from localStorage
   useEffect(() => {
     const history = localStorage.getItem("searchHistory");
     if (history) setSearchHistory(JSON.parse(history));
   }, []);
+
+  // Handle click outside to close search
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        onClose?.();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
 
   // Debounced search function (200ms delay)
   const performSearch = useCallback(
@@ -68,8 +81,12 @@ export default function GlobalSearch({ notes, onSelectNote, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-8">
-      <div className="bg-base-100 rounded-lg shadow-2xl w-full max-w-2xl mx-4">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-8" onClick={() => onClose?.()}>
+      <div 
+        ref={containerRef}
+        className="bg-base-100 rounded-lg shadow-2xl w-full max-w-2xl mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Search Input */}
         <div className="p-4 border-b border-base-200 relative">
           <div className="flex items-center gap-3">

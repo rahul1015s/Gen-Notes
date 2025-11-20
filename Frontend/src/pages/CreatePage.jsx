@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Loader2, FolderOpen, Tag, X } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Loader2, FolderOpen, Tag, X, Wifi, WifiOff } from 'lucide-react';
 import toast from "react-hot-toast";
 import api from '../lib/axios.js';
 import TiptapEditor from '../components/TiptapEditor.jsx';
 import foldersService from '../services/foldersService.js';
+import offlineSyncService from '../services/offlineSyncService.js';
 
 const CreatePage = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // Folder & Tags
   const [folders, setFolders] = useState([]);
@@ -26,6 +28,12 @@ const CreatePage = () => {
 
   // Load folders & tags
   useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+
     const loadData = async () => {
       try {
         const [foldersRes, tagsRes] = await Promise.all([
@@ -44,6 +52,11 @@ const CreatePage = () => {
       }
     };
     loadData();
+
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
   }, [urlFolderId]);
 
   const handleSubmit = async (e) => {
@@ -70,16 +83,37 @@ const CreatePage = () => {
         title: title.trim(), 
         content,
         tags: selectedTags,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       if (selectedFolderId) {
         noteData.folderId = selectedFolderId;
       }
 
-      await api.post("/api/v1/notes", noteData);
-      
-      toast.success("✅ Note Created!");
-      navigate("/all-notes");
+      if (isOnline) {
+        // Create on server
+        const res = await api.post("/api/v1/notes", noteData);
+        
+        // Save to offline storage
+        await offlineSyncService.saveNoteOffline(res.data);
+        
+        toast.success("✅ Note Created!");
+        navigate("/all-notes");
+      } else {
+        // Create offline - generate temp ID
+        const tempId = 'temp_' + Date.now();
+        const offlineNote = { ...noteData, _id: tempId };
+        
+        // Save to offline storage
+        await offlineSyncService.saveNoteOffline(offlineNote);
+        
+        // Add to sync queue
+        await offlineSyncService.addToSyncQueue(tempId, 'create', noteData);
+        
+        toast.success("📝 Note saved offline! Will sync when online.");
+        navigate("/all-notes");
+      }
     } catch (error) {
       if (error.response?.status === 429) {
         toast.error(
@@ -93,6 +127,24 @@ const CreatePage = () => {
           }
         );
       } else {
+        console.error('Create error:', error);
+        
+        // If offline, save locally anyway
+        if (!isOnline) {
+          try {
+            const tempId = 'temp_' + Date.now();
+            const offlineNote = { ...noteData, _id: tempId };
+            await offlineSyncService.saveNoteOffline(offlineNote);
+            await offlineSyncService.addToSyncQueue(tempId, 'create', noteData);
+            
+            toast.success("📝 Note saved offline! Will sync when online.");
+            navigate("/all-notes");
+            return;
+          } catch (err) {
+            console.error('Offline save failed:', err);
+          }
+        }
+        
         toast.error(error.response?.data?.message || "Failed to create note!");
       }
     } finally {
@@ -152,7 +204,26 @@ const CreatePage = () => {
             <ArrowLeft className="size-5" />
             <span className="hidden sm:inline">Back</span>
           </Link>
-          <h1 className="text-2xl font-bold text-base-content">✍️ New Note</h1>
+          <div className="flex flex-col items-center gap-2">
+            <h1 className="text-2xl font-bold text-base-content">✍️ New Note</h1>
+            <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+              isOnline 
+                ? 'bg-success/20 text-success' 
+                : 'bg-warning/20 text-warning'
+            }`}>
+              {isOnline ? (
+                <>
+                  <Wifi className="size-3" />
+                  Online
+                </>
+              ) : (
+                <>
+                  <WifiOff className="size-3" />
+                  Offline
+                </>
+              )}
+            </div>
+          </div>
           <div className="w-14"></div>
         </div>
 
