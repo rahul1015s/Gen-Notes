@@ -25,7 +25,7 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.js',
       manifest: {
-        name: 'Apple Notes Clone',
+        name: 'GenNotes',
         short_name: 'Notes',
         description: 'A beautiful, secure note-taking app inspired by Apple Notes',
         theme_color: '#0f172a',
