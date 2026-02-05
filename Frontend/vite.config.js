@@ -2,11 +2,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import path from 'path' // 
 
 export default defineConfig({
   define: {
     global: 'window',
   },
+
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'), 
+    },
+  },
+
   plugins: [
     react(),
     tailwindcss(),
@@ -42,73 +50,17 @@ export default defineConfig({
           }
         ],
         icons: [
-          {
-            src: '/favicon/favicon-96x96.png',
-            sizes: '96x96',
-            type: 'image/png',
-          },
-          {
-            src: '/favicon/apple-touch-icon.png',
-            sizes: '180x180',
-            type: 'image/png',
-          },
-          {
-            src: '/favicon/web-app-manifest-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: '/favicon/web-app-manifest-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-          {
-            src: '/favicon/web-app-manifest-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: '/favicon/web-app-manifest-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
+          { src: '/favicon/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+          { src: '/favicon/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+          { src: '/favicon/web-app-manifest-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/favicon/web-app-manifest-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/favicon/web-app-manifest-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/favicon/web-app-manifest-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       includeAssets: ['favicon/*.png', 'favicon/*.ico', 'favicon/*.svg'],
       workbox: {
-        globPatterns: [
-          '**/*.{js,css,html,ico,png,svg,json}',
-          '**/*.woff',
-          '**/*.woff2'
-        ],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\./,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 3600 // 1 hour
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\//,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'fonts-cache',
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 2592000 // 30 days
-              }
-            }
-          }
-        ]
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}', '**/*.woff', '**/*.woff2'],
       },
       devOptions: {
         enabled: true,
@@ -116,6 +68,7 @@ export default defineConfig({
       }
     }),
   ],
+
   optimizeDeps: {
     include: ['immutable'],
   },

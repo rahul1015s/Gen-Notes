@@ -1,5 +1,5 @@
 {
-  "name": "notes",
+  "name": "Gen notes",
   "version": "1.0.0",
   "description": "Gen-Notes is a modern, secure, and lightning-fast note-taking web application built with a React frontend and a Node.js/Express/MongoDB backend.",
   "main": "index.js",

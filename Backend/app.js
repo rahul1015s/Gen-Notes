@@ -9,6 +9,7 @@ import folderRouter from "./routes/folder.routes.js";
 import tagRouter from "./routes/tag.routes.js";
 import lockRouter from "./routes/lock.routes.js";
 import reminderRouter from "./routes/reminder.routes.js";
+import webauthnRouter from "./routes/webauthn.routes.js";
 import { appLimiter } from "./middlewares/rateLimit.middleware.js";
 import path from "path";
 
@@ -42,6 +43,7 @@ app.use(appLimiter);
 
 // Routes
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/auth/webauthn', webauthnRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/notes', notesRouter);
 app.use('/api/v1/folders', folderRouter);

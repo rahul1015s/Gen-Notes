@@ -39,7 +39,54 @@ const userSchema = new mongoose.Schema({
     resetPasswordExpires: {
         type: Date,
         default: null,
-    }
+    },
+    preferences: {
+        theme: {
+            type: String,
+            enum: ['light', 'dark'],
+            default: 'dark'
+        },
+        notificationsEnabled: {
+            type: Boolean,
+            default: true
+        },
+        twoFactorEnabled: {
+            type: Boolean,
+            default: false
+        }
+    },
+    biometricCredentials: [
+        {
+            credentialID: {
+                type: String,
+                required: true,
+            },
+            publicKey: {
+                type: String,
+                required: true,
+            },
+            counter: {
+                type: Number,
+                required: true,
+                default: 0,
+            },
+            credentialDeviceType: {
+                type: String,
+                enum: ['single-device', 'multi-device'],
+            },
+            credentialBackedUp: {
+                type: Boolean,
+                default: false,
+            },
+            createdAt: {
+                type: Date,
+                default: Date.now,
+            },
+            lastUsedAt: {
+                type: Date,
+            },
+        }
+    ]
 }, { timestamps: true });
 
 // Index for OTP expiration (automatic cleanup)

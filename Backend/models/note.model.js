@@ -59,6 +59,12 @@ const noteSchema  = new mongoose.Schema({
     lockPassword: {
         type: String,
         default: null
+    },
+
+    priority: {
+        type: String,
+        enum: ['low', 'medium', 'high'],
+        default: 'medium'
     }
 
 }, {timestamps: true})  //Automatically adds createdAt and updatedAt timestamps

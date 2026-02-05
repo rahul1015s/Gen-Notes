@@ -13,6 +13,99 @@ export async function getAllNotes(req, res) {
     }
 }
 
+export async function searchNotes(req, res) {
+    try {
+        const { query } = req.query;
+        
+        if (!query || query.trim() === '') {
+            return res.status(400).json({ message: "Search query is required" });
+        }
+
+        // Using MongoDB aggregation pipeline for powerful search
+        const notes = await Note.aggregate([
+            // Match user's notes
+            {
+                $match: {
+                    userId: req.user._id,
+                    $or: [
+                        { title: { $regex: query, $options: 'i' } },
+                        { content: { $regex: query, $options: 'i' } },
+                        { tags: { $regex: query, $options: 'i' } }
+                    ]
+                }
+            },
+            // Lookup tags for enrichment
+            {
+                $lookup: {
+                    from: 'tags',
+                    localField: 'tags',
+                    foreignField: '_id',
+                    as: 'tagDetails'
+                }
+            },
+            // Lookup folder for enrichment
+            {
+                $lookup: {
+                    from: 'folders',
+                    localField: 'folderId',
+                    foreignField: '_id',
+                    as: 'folderDetails'
+                }
+            },
+            // Add search score for ranking
+            {
+                $addFields: {
+                    searchScore: {
+                        $cond: [
+                            { $regexMatch: { input: '$title', regex: query, options: 'i' } },
+                            3,
+                            {
+                                $cond: [
+                                    { $regexMatch: { input: '$content', regex: query, options: 'i' } },
+                                    2,
+                                    1
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            // Sort by search score and creation date
+            {
+                $sort: { searchScore: -1, createdAt: -1 }
+            },
+            // Limit results to 50
+            {
+                $limit: 50
+            },
+            // Unwind tags for better formatting
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    content: 1,
+                    userId: 1,
+                    folderId: 1,
+                    tags: '$tagDetails',
+                    color: 1,
+                    isPinned: 1,
+                    isArchived: 1,
+                    isLocked: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    folder: { $arrayElemAt: ['$folderDetails', 0] },
+                    searchScore: 1
+                }
+            }
+        ]);
+
+        res.status(200).json(notes);
+    } catch (error) {
+        console.error("Error in searchNotes controller", error);
+        res.status(500).json({ message: "Error in searching notes" });
+    }
+}
+
 export async function getNoteById(req, res) {
     try {
         // Get single note - Must belong to logged-in user

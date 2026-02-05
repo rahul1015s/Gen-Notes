@@ -1,12 +1,16 @@
 import { Outlet, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
-import Navbar from './components/Navbar';
+import { useEffect, useState } from 'react';
 import reminderService from './services/reminderService';
+import AppShell from './components/AppShell';
 
 export default function App() {
   const location = useLocation();
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved ? saved === 'dark' : true;
+  });
   
-  // Show navbar on all pages except auth pages
+  // Show new dashboard layout on all pages except auth pages
   const authPages = ['/log-in', '/sign-up', '/forgot-password', '/verify-otp'];
   const isAuthPage = authPages.some(page => location.pathname.startsWith(page));
 
@@ -27,11 +31,12 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-100 via-base-100 to-base-200">
-      {!isAuthPage && <Navbar />}
-      <main className="transition-all duration-300">
-        <Outlet /> {/* This is where nested routes will render */}
-      </main>
-    </div>
+    <AppShell isDark={isDark}>
+      <div className="min-h-screen">
+        <main className="transition-all duration-300">
+          <Outlet /> {/* This is where nested routes will render */}
+        </main>
+      </div>
+    </AppShell>
   );
 }

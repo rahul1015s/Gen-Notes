@@ -15,10 +15,15 @@ const NoteCard = ({ note, setNotes, isPinned = false, onPinChange, onDelete }) =
 
   // Extract plain text preview
   const getPreview = (html) => {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html || '<p></p>';
-    const text = tempDiv.textContent || tempDiv.innerText || '';
-    return text.substring(0, 100).trim();
+    if (!html || typeof html !== 'string') return '';
+    try {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      const text = (tempDiv.textContent || tempDiv.innerText || '').trim();
+      return text ? text.substring(0, 100) : '';
+    } catch (e) {
+      return '';
+    }
   };
 
   const handleTogglePin = async (e) => {
@@ -105,7 +110,7 @@ const NoteCard = ({ note, setNotes, isPinned = false, onPinChange, onDelete }) =
 
           {/* Content Preview */}
           <p className="text-sm text-base-content/70 line-clamp-3 mb-auto leading-relaxed flex-1">
-            {getPreview(note.content) || 'No content'}
+            {getPreview(note.content) ? getPreview(note.content) : 'No content'}
           </p>
 
           {/* Footer */}
