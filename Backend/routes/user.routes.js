@@ -14,3 +14,5 @@ userRouter.get('/me', authorize, getUser);
 userRouter.put('/preferences', authorize, updatePreferences);
 
 userRouter.get('/:id',authorize, getUser);
+
+export default userRouter;
