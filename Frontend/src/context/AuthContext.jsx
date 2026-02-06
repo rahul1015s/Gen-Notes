@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import offlineSyncService from "../services/offlineSyncService.js";
 
 // Create a new context to hold authentication-related values
 const AuthContext = createContext();
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }) => {
    */
   const login = (token) => {
     localStorage.setItem("token", token);
+    offlineSyncService.setAuthToken(token).catch(() => {});
     setIsAuthenticated(true);
   };
 
@@ -31,6 +33,7 @@ export const AuthProvider = ({ children }) => {
    */
   const logout = () => {
     localStorage.removeItem("token");
+    offlineSyncService.clearAuthToken().catch(() => {});
     setIsAuthenticated(false);
   };
 

@@ -55,6 +55,14 @@ const userSchema = new mongoose.Schema({
             default: false
         }
     },
+    appLock: {
+        enabled: { type: Boolean, default: false },
+        method: { type: String, enum: ['pin', 'pattern', 'gesture'], default: 'pin' },
+        pinHash: { type: String, default: null },
+        patternHash: { type: String, default: null },
+        gestureHash: { type: String, default: null },
+        lastUnlockedAt: { type: Date, default: null }
+    },
     biometricCredentials: [
         {
             credentialID: {

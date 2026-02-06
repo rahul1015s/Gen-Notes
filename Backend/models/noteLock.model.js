@@ -15,10 +15,11 @@ const noteLockSchema = new mongoose.Schema(
     },
     lockType: {
       type: String,
-      enum: ['PIN', 'BIOMETRIC', 'PASSKEY'],
+      enum: ['PIN', 'PASSWORD', 'PIN_PASSWORD', 'BIOMETRIC', 'PASSKEY'],
       default: 'PIN',
     },
     pinHash: String, // bcryptjs hashed PIN
+    passwordHash: String, // bcryptjs hashed password
     biometricEnabled: {
       type: Boolean,
       default: false,

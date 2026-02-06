@@ -1,5 +1,19 @@
 import mongoose from "mongoose";
 
+const taskSchema = new mongoose.Schema({
+    id: { type: String, required: true },
+    text: { type: String, default: "" },
+    completed: { type: Boolean, default: false },
+    order: { type: Number, default: 0 },
+    priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
+    dueDate: { type: Date, default: null },
+    reminderAt: { type: Date, default: null }
+}, { _id: false });
+
+taskSchema.add({
+    children: { type: [taskSchema], default: [] }
+});
+
 const noteSchema  = new mongoose.Schema({
     title: {
         type: String,
@@ -65,6 +79,11 @@ const noteSchema  = new mongoose.Schema({
         type: String,
         enum: ['low', 'medium', 'high'],
         default: 'medium'
+    },
+
+    tasks: {
+        type: [taskSchema],
+        default: []
     }
 
 }, {timestamps: true})  //Automatically adds createdAt and updatedAt timestamps

@@ -10,6 +10,8 @@ import tagRouter from "./routes/tag.routes.js";
 import lockRouter from "./routes/lock.routes.js";
 import reminderRouter from "./routes/reminder.routes.js";
 import webauthnRouter from "./routes/webauthn.routes.js";
+import pushRouter from "./routes/push.routes.js";
+import syncRouter from "./routes/sync.routes.js";
 import { appLimiter } from "./middlewares/rateLimit.middleware.js";
 import path from "path";
 
@@ -50,6 +52,8 @@ app.use('/api/v1/folders', folderRouter);
 app.use('/api/v1/tags', tagRouter);
 app.use('/api/v1/locks', lockRouter);
 app.use('/api/v1/reminders', reminderRouter);
+app.use('/api/v1/push', pushRouter);
+app.use('/api/v1/sync', syncRouter);
 
 // FIX 3: Remove or fix static file serving for Vercel
 // Remove these lines or conditionally enable them:

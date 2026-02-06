@@ -16,6 +16,9 @@
 .ProseMirror {
   outline: none;
   padding: 1rem;
+  color: hsl(var(--bc));
+  caret-color: hsl(var(--bc));
+  min-height: 100%;
 }
 
 .ProseMirror:focus {
@@ -24,7 +27,7 @@
 
 /* Placeholder */
 .ProseMirror p.is-editor-empty:first-child::before {
-  color: #9ca3af;
+  color: hsl(var(--bc) / 0.4);
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -91,6 +94,35 @@
   margin-right: 0.5rem;
 }
 
+/* Task Lists */
+.ProseMirror ul.task-list {
+  list-style: none;
+  padding-left: 0.5rem;
+}
+
+.ProseMirror li.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.5rem 0;
+}
+
+.ProseMirror li.task-item > label {
+  margin-top: 0.15rem;
+  user-select: none;
+}
+
+.ProseMirror li.task-item input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: hsl(var(--p));
+  cursor: pointer;
+}
+
+.ProseMirror li.task-item > div {
+  flex: 1;
+}
+
 /* Blockquote */
 .ProseMirror blockquote {
   border-left: 4px solid hsl(var(--p) / 0.3);
@@ -147,7 +179,7 @@
 /* Horizontal Rule */
 .ProseMirror hr {
   border: none;
-  border-top: 2px solid hsl(var(--n) / 0.2);
+  border-top: 2px solid hsl(var(--bc) / 0.15);
   margin: 1.5rem 0;
 }
 

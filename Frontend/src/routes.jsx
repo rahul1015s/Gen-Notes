@@ -9,6 +9,8 @@ import Login from "./components/Login.jsx";
 import Home from "./pages/Home.jsx";
 import AllNotes from "./pages/AllNotes.jsx";
 import Settings from "./pages/Settings.jsx";
+import Folders from "./pages/Folders.jsx";
+import Priority from "./pages/Priority.jsx";
 import PrivateRoute from "./components/PrivateRoute.jsx";
 
 import ForgotPassword from "./pages/ForgotPassword.jsx";
@@ -36,6 +38,8 @@ export const router = createBrowserRouter([
         children: [
           { path: "all-notes", element: <AllNotes /> },
           { path: "all-notes/:folderId", element: <AllNotes /> },
+          { path: "folders", element: <Folders /> },
+          { path: "priority", element: <Priority /> },
           { path: "create", element: <CreatePage /> },
           { path: "note/:id", element: <NotedetailPage /> },
           { path: "settings", element: <Settings /> },

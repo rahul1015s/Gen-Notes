@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils';
-import { Clock, Tag } from 'lucide-react';
+import { Clock, Tag, Pin, Trash2 } from 'lucide-react';
 
 // Helper function to strip HTML tags
 const stripHtmlTags = (html) => {
@@ -11,7 +11,7 @@ const stripHtmlTags = (html) => {
   return tempDiv.textContent || tempDiv.innerText || '';
 };
 
-export default function NoteCard({ note, onClick = () => {}, isDark = true }) {
+export default function NoteCard({ note, onClick = () => {}, onPin = () => {}, onDelete = () => {}, isDark = true }) {
   const {
     title = 'Untitled Note',
     course = { name: 'CS-201', color: 'bg-blue-500' },
@@ -20,6 +20,7 @@ export default function NoteCard({ note, onClick = () => {}, isDark = true }) {
     tags = [],
     createdAt = new Date(),
     snippets = 0,
+    isPinned = false,
   } = note;
 
   const priorityConfig = {
@@ -30,15 +31,53 @@ export default function NoteCard({ note, onClick = () => {}, isDark = true }) {
 
   const config = priorityConfig[priority] || priorityConfig.medium;
 
+  const longPressRef = useRef(null);
+  const [showActions, setShowActions] = useState(false);
+  const [longPressed, setLongPressed] = useState(false);
+
+  const startLongPress = () => {
+    setLongPressed(false);
+    longPressRef.current = setTimeout(() => {
+      setLongPressed(true);
+      setShowActions(true);
+    }, 500);
+  };
+
+  const cancelLongPress = () => {
+    if (longPressRef.current) {
+      clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+  };
+
+  const handleCardClick = () => {
+    if (longPressed) return;
+    onClick();
+  };
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleCardClick}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setShowActions(true);
+      }}
+      onTouchStart={startLongPress}
+      onTouchEnd={cancelLongPress}
+      onTouchMove={cancelLongPress}
+      onMouseDown={startLongPress}
+      onMouseUp={cancelLongPress}
+      onMouseLeave={cancelLongPress}
       className={cn(
         'group relative rounded-xl border overflow-hidden transition-all duration-300 cursor-pointer',
         'hover:shadow-lg hover:-translate-y-0.5 p-5 h-full flex flex-col',
-        isDark
-          ? 'border-slate-700/50 bg-slate-800/40 backdrop-blur-sm hover:border-slate-600 hover:bg-slate-800/60 hover:shadow-blue-500/10'
-          : 'border-slate-200 bg-slate-100/40 backdrop-blur-sm hover:border-slate-300 hover:bg-slate-200/60 hover:shadow-blue-500/10'
+        isPinned
+          ? (isDark
+              ? 'border-amber-500/30 bg-slate-800/50 hover:border-amber-500/50'
+              : 'border-amber-300 bg-amber-50/60 hover:border-amber-400')
+          : (isDark
+              ? 'border-slate-700/50 bg-slate-800/40 backdrop-blur-sm hover:border-slate-600 hover:bg-slate-800/60 hover:shadow-blue-500/10'
+              : 'border-slate-200 bg-slate-100/40 backdrop-blur-sm hover:border-slate-300 hover:bg-slate-200/60 hover:shadow-blue-500/10')
       )}
     >
       {/* Gradient accent on hover */}
@@ -52,16 +91,35 @@ export default function NoteCard({ note, onClick = () => {}, isDark = true }) {
             <div className={cn('w-2.5 h-2.5 rounded-full flex-shrink-0', course.color)} />
             <span className={cn("text-xs font-semibold", isDark ? "text-slate-400" : "text-slate-600")}>{course.name}</span>
           </div>
-          <span
-            className={cn(
-              'text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0',
-              config.color,
-              'border',
-              config.border
-            )}
-          >
-            {config.badge}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              className={cn(
+                "p-1.5 rounded-md border",
+                isPinned
+                  ? "border-amber-500/30 text-amber-400 bg-amber-500/10"
+                  : isDark
+                    ? "border-slate-700 text-slate-400 hover:text-slate-200"
+                    : "border-slate-200 text-slate-500 hover:text-slate-700"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPin();
+              }}
+              title={isPinned ? "Unpin" : "Pin"}
+            >
+              <Pin className={cn("w-3.5 h-3.5", isPinned ? "fill-current" : "")} />
+            </button>
+            <span
+              className={cn(
+                'text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0',
+                config.color,
+                'border',
+                config.border
+              )}
+            >
+              {config.badge}
+            </span>
+          </div>
         </div>
 
         {/* Title */}
@@ -111,6 +169,57 @@ export default function NoteCard({ note, onClick = () => {}, isDark = true }) {
           </div>
         </div>
       </div>
+
+      {/* Android-style Action Sheet */}
+      {showActions && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className={cn(
+            "w-full max-w-md rounded-2xl border p-4 space-y-2",
+            isDark ? "bg-slate-900 border-slate-700/50 text-white" : "bg-white border-slate-200 text-slate-900"
+          )}>
+            <div className={cn("text-sm font-semibold px-2 pb-2", isDark ? "text-slate-200" : "text-slate-700")}>
+              Quick actions
+            </div>
+            <button
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left",
+                isDark ? "hover:bg-slate-800" : "hover:bg-slate-100"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPin();
+                setShowActions(false);
+              }}
+            >
+              <Pin className="w-4 h-4" />
+              {isPinned ? "Unpin note" : "Pin note"}
+            </button>
+            <button
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left",
+                isDark ? "hover:bg-slate-800 text-red-400" : "hover:bg-slate-100 text-red-600"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+                setShowActions(false);
+              }}
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+            <button
+              className={cn(
+                "w-full px-3 py-3 rounded-xl text-center text-sm font-medium border",
+                isDark ? "border-slate-700 hover:bg-slate-800" : "border-slate-200 hover:bg-slate-100"
+              )}
+              onClick={() => setShowActions(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

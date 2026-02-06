@@ -22,13 +22,14 @@ class FoldersService {
   /**
    * Create a new folder
    */
-  async createFolder(name, parentId = null, icon = null, color = null) {
+  async createFolder(name, parentId = null, icon = null, color = null, isPrivate = false) {
     try {
       const response = await api.post("/api/v1/folders", {
         name: name.trim(),
         parentId: parentId || null,
         icon: icon || FOLDER_ICONS[0],
         color: color || "#4ECDC4",
+        isPrivate: !!isPrivate,
       });
       return response.data;
     } catch (error) {

@@ -208,10 +208,22 @@ export const verifyAuthentication = async (req, res, next) => {
     const credentials = getBiometricCredentials(user);
 
     // Find the credential used for this authentication
+    const normalizeId = (id) => {
+      try {
+        return Buffer.from(id, 'base64url').toString('base64');
+      } catch (e) {
+        try {
+          return Buffer.from(id, 'base64').toString('base64');
+        } catch (err) {
+          return null;
+        }
+      }
+    };
+
     const credentialId = authResponse.id;
+    const normalizedId = normalizeId(credentialId);
     const storedCredential = credentials.find(
-      (cred) => Buffer.from(cred.credentialID, 'base64').toString('hex') === 
-                Buffer.from(credentialId, 'utf8').toString('hex')
+      (cred) => normalizedId && cred.credentialID === normalizedId
     );
 
     if (!storedCredential) {
@@ -283,7 +295,8 @@ export const getBiometricCredentialsForUser = async (req, res, next) => {
 
     const credentials = user.biometricCredentials || [];
     const credentialList = credentials.map((cred) => ({
-      id: cred.credentialID.substring(0, 12) + '...', // Masked ID for display
+      id: cred.credentialID,
+      displayId: cred.credentialID.substring(0, 12) + '...', // Masked ID for display
       type: cred.credentialDeviceType || 'unknown',
       backedUp: cred.credentialBackedUp,
       createdAt: cred.createdAt,

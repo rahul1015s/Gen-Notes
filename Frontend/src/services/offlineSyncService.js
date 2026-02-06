@@ -1,10 +1,11 @@
 // Offline Sync Service
 // Handles IndexedDB storage and cloud sync
+import { registerOneOffSync } from './backgroundSync.js';
 
 class OfflineSyncService {
   constructor() {
     this.dbName = "NotesAppDB";
-    this.version = 1;
+    this.version = 2;
     this.db = null;
     this.isOnline = navigator.onLine;
     this.syncQueue = [];
@@ -38,10 +39,20 @@ class OfflineSyncService {
 
         // Create Sync Queue store
         if (!db.objectStoreNames.contains("syncQueue")) {
-          db.createObjectStore("syncQueue", {
+          const syncStore = db.createObjectStore("syncQueue", {
             keyPath: "id",
             autoIncrement: true,
           });
+          syncStore.createIndex("synced", "synced", { unique: false });
+          syncStore.createIndex("status", "status", { unique: false });
+        } else {
+          const syncStore = request.transaction.objectStore("syncQueue");
+          if (!syncStore.indexNames.contains("synced")) {
+            syncStore.createIndex("synced", "synced", { unique: false });
+          }
+          if (!syncStore.indexNames.contains("status")) {
+            syncStore.createIndex("status", "status", { unique: false });
+          }
         }
 
         // Create Tags store
@@ -52,6 +63,16 @@ class OfflineSyncService {
         // Create Folders store
         if (!db.objectStoreNames.contains("folders")) {
           db.createObjectStore("folders", { keyPath: "_id" });
+        }
+
+        // Store auth token for background sync (service worker)
+        if (!db.objectStoreNames.contains("auth")) {
+          db.createObjectStore("auth", { keyPath: "key" });
+        }
+
+        // Store sync conflicts for review
+        if (!db.objectStoreNames.contains("syncConflicts")) {
+          db.createObjectStore("syncConflicts", { keyPath: "id", autoIncrement: true });
         }
       };
     });
@@ -124,7 +145,7 @@ class OfflineSyncService {
   /**
    * Add to sync queue
    */
-  async addToSyncQueue(noteId, action, data) {
+  async addToSyncQueue(noteId, action, data, meta = {}) {
     if (!this.db) await this.initDB();
 
     return new Promise((resolve, reject) => {
@@ -136,6 +157,11 @@ class OfflineSyncService {
         data,
         timestamp: Date.now(),
         synced: false,
+        status: "pending",
+        retryCount: 0,
+        lastError: null,
+        baseUpdatedAt: meta.baseUpdatedAt || null,
+        deviceId: meta.deviceId || null,
       });
 
       request.onerror = () => reject(request.error);
@@ -175,8 +201,36 @@ class OfflineSyncService {
       getRequest.onsuccess = () => {
         const item = getRequest.result;
         item.synced = true;
+        item.status = "synced";
+        item.syncedAt = Date.now();
         const putRequest = store.put(item);
 
+        putRequest.onerror = () => reject(putRequest.error);
+        putRequest.onsuccess = () => resolve(putRequest.result);
+      };
+
+      getRequest.onerror = () => reject(getRequest.error);
+    });
+  }
+
+  /**
+   * Update sync item status on error/conflict
+   */
+  async updateSyncItem(syncId, updates = {}) {
+    if (!this.db) await this.initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(["syncQueue"], "readwrite");
+      const store = transaction.objectStore("syncQueue");
+      const getRequest = store.get(syncId);
+
+      getRequest.onsuccess = () => {
+        const item = getRequest.result;
+        const updated = {
+          ...item,
+          ...updates,
+        };
+        const putRequest = store.put(updated);
         putRequest.onerror = () => reject(putRequest.error);
         putRequest.onsuccess = () => resolve(putRequest.result);
       };
@@ -195,6 +249,84 @@ class OfflineSyncService {
       const transaction = this.db.transaction(["syncQueue"], "readwrite");
       const store = transaction.objectStore("syncQueue");
       const request = store.clear();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+
+  /**
+   * Store auth token for service worker sync
+   */
+  async setAuthToken(token) {
+    if (!this.db) await this.initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(["auth"], "readwrite");
+      const store = transaction.objectStore("auth");
+      const request = store.put({ key: "token", value: token });
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = async () => {
+        // Best-effort background sync registration
+        registerOneOffSync().catch(() => {});
+        resolve(request.result);
+      };
+    });
+  }
+
+  async clearAuthToken() {
+    if (!this.db) await this.initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(["auth"], "readwrite");
+      const store = transaction.objectStore("auth");
+      const request = store.delete("token");
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+
+  /**
+   * Save sync conflicts for later review
+   */
+  async saveSyncConflict(conflict) {
+    if (!this.db) await this.initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(["syncConflicts"], "readwrite");
+      const store = transaction.objectStore("syncConflicts");
+      const request = store.add({
+        ...conflict,
+        createdAt: Date.now(),
+      });
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+
+  async getSyncConflicts() {
+    if (!this.db) await this.initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(["syncConflicts"], "readonly");
+      const store = transaction.objectStore("syncConflicts");
+      const request = store.getAll();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result || []);
+    });
+  }
+
+  async deleteSyncConflict(conflictId) {
+    if (!this.db) await this.initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(["syncConflicts"], "readwrite");
+      const store = transaction.objectStore("syncConflicts");
+      const request = store.delete(conflictId);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);

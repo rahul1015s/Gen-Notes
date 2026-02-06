@@ -3,7 +3,7 @@ import bcryptjs from 'bcryptjs';
 
 export async function createNoteLock(req, res) {
   try {
-    const { noteId, pin, lockType = 'PIN' } = req.body;
+    const { noteId, pin, password, lockType = 'PIN' } = req.body;
     const userId = req.user._id;
 
     if (!noteId) {
@@ -24,9 +24,14 @@ export async function createNoteLock(req, res) {
     };
 
     // Hash PIN if provided
-    if (pin && lockType === 'PIN') {
+    if (pin && (lockType === 'PIN' || lockType === 'PIN_PASSWORD')) {
       const salt = await bcryptjs.genSalt(10);
       lockData.pinHash = await bcryptjs.hash(pin.toString(), salt);
+    }
+    // Hash password if provided
+    if (password && (lockType === 'PASSWORD' || lockType === 'PIN_PASSWORD')) {
+      const salt = await bcryptjs.genSalt(10);
+      lockData.passwordHash = await bcryptjs.hash(password.toString(), salt);
     }
 
     const newLock = await NoteLock.create(lockData);
@@ -39,11 +44,11 @@ export async function createNoteLock(req, res) {
 
 export async function verifyNoteLock(req, res) {
   try {
-    const { noteId, pin } = req.body;
+    const { noteId, pin, password } = req.body;
     const userId = req.user._id;
 
-    if (!noteId || !pin) {
-      return res.status(400).json({ message: 'noteId and pin are required' });
+    if (!noteId) {
+      return res.status(400).json({ message: 'noteId is required' });
     }
 
     const lock = await NoteLock.findOne({ noteId, userId });
@@ -59,8 +64,19 @@ export async function verifyNoteLock(req, res) {
       });
     }
 
-    // Verify PIN
-    const isValid = await bcryptjs.compare(pin.toString(), lock.pinHash);
+    let isValid = false;
+    if (lock.lockType === 'PIN') {
+      if (!pin) return res.status(400).json({ message: 'pin is required' });
+      isValid = await bcryptjs.compare(pin.toString(), lock.pinHash);
+    } else if (lock.lockType === 'PASSWORD') {
+      if (!password) return res.status(400).json({ message: 'password is required' });
+      isValid = await bcryptjs.compare(password.toString(), lock.passwordHash);
+    } else if (lock.lockType === 'PIN_PASSWORD') {
+      if (!pin || !password) return res.status(400).json({ message: 'pin and password are required' });
+      const pinOk = await bcryptjs.compare(pin.toString(), lock.pinHash);
+      const passOk = await bcryptjs.compare(password.toString(), lock.passwordHash);
+      isValid = pinOk && passOk;
+    }
     
     if (!isValid) {
       // Increment failed attempts
@@ -121,7 +137,7 @@ export async function unlockNote(req, res) {
 
 export async function removeNoteLock(req, res) {
   try {
-    const { noteId } = req.body;
+    const noteId = req.params.noteId || req.body.noteId;
     const userId = req.user._id;
 
     if (!noteId) {
@@ -165,7 +181,8 @@ export async function getNoteLock(req, res) {
 
 export async function updateNoteLock(req, res) {
   try {
-    const { noteId, pin, lockType } = req.body;
+    const noteId = req.params.noteId || req.body.noteId;
+    const { pin, password, lockType } = req.body;
     const userId = req.user._id;
 
     if (!noteId) {
@@ -177,6 +194,10 @@ export async function updateNoteLock(req, res) {
     if (pin) {
       const salt = await bcryptjs.genSalt(10);
       updateData.pinHash = await bcryptjs.hash(pin.toString(), salt);
+    }
+    if (password) {
+      const salt = await bcryptjs.genSalt(10);
+      updateData.passwordHash = await bcryptjs.hash(password.toString(), salt);
     }
 
     if (lockType) {

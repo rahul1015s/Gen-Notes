@@ -48,7 +48,7 @@ export const getFolderById = async (req, res) => {
  */
 export const createFolder = async (req, res) => {
   try {
-    const { name, description, icon, color, parentId } = req.body;
+    const { name, description, icon, color, parentId, isPrivate } = req.body;
 
     // Validation
     if (!name || !name.trim()) {
@@ -74,6 +74,7 @@ export const createFolder = async (req, res) => {
       icon: icon || "📁",
       color: color || "#4ECDC4",
       parentId: parentId || null,
+      isPrivate: !!isPrivate,
     });
 
     await folder.save();
@@ -90,7 +91,7 @@ export const createFolder = async (req, res) => {
  */
 export const updateFolder = async (req, res) => {
   try {
-    const { name, description, icon, color, parentId } = req.body;
+    const { name, description, icon, color, parentId, isPrivate } = req.body;
 
     let folder = await Folder.findById(req.params.id);
 
@@ -127,6 +128,7 @@ export const updateFolder = async (req, res) => {
     if (icon) folder.icon = icon;
     if (color) folder.color = color;
     if (parentId !== undefined) folder.parentId = parentId || null;
+    if (isPrivate !== undefined) folder.isPrivate = !!isPrivate;
 
     await folder.save();
 

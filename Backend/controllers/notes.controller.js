@@ -122,7 +122,7 @@ export async function getNoteById(req, res) {
 
 export async function createNote(req, res) {
     try {
-        const { title, content, folderId, tags, color } = req.body;
+        const { title, content, folderId, tags, color, tasks } = req.body;
         const newNote = new Note({
             title, 
             content,
@@ -133,7 +133,8 @@ export async function createNote(req, res) {
             color: color || "#ffffff",
             isPinned: false,
             isArchived: false,
-            isLocked: false
+            isLocked: false,
+            tasks: Array.isArray(tasks) ? tasks : []
         });
 
         await newNote.save();
@@ -149,7 +150,7 @@ export async function createNote(req, res) {
 
 export async function updateNote(req, res) {
     try {
-        const { title, content, folderId, tags, color, isPinned, isArchived } = req.body;
+        const { title, content, folderId, tags, color, isPinned, isArchived, tasks } = req.body;
         
         const updateData = {};
         if (title !== undefined) updateData.title = title;
@@ -159,6 +160,7 @@ export async function updateNote(req, res) {
         if (color !== undefined) updateData.color = color;
         if (isPinned !== undefined) updateData.isPinned = isPinned;
         if (isArchived !== undefined) updateData.isArchived = isArchived;
+        if (tasks !== undefined) updateData.tasks = Array.isArray(tasks) ? tasks : [];
 
         const updatedNote = await Note.findOneAndUpdate(
             { _id: req.params.id, userId: req.user._id }, 
@@ -188,5 +190,51 @@ export async function deleteNote(req, res) {
     } catch (error) {
         console.error('Error in deleteNote', error);
         res.status(500).json({ message: "Error in deleting note" });
+    }
+}
+
+export async function pinNote(req, res) {
+    try {
+        const updated = await Note.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user._id },
+            { isPinned: true },
+            { new: true }
+        ).populate('tags', 'name color');
+
+        if (!updated) return res.status(404).json({ message: "Note not found" });
+        res.status(200).json(updated);
+    } catch (error) {
+        console.error('Error in pinNote', error);
+        res.status(500).json({ message: "Failed to pin note" });
+    }
+}
+
+export async function unpinNote(req, res) {
+    try {
+        const updated = await Note.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user._id },
+            { isPinned: false },
+            { new: true }
+        ).populate('tags', 'name color');
+
+        if (!updated) return res.status(404).json({ message: "Note not found" });
+        res.status(200).json(updated);
+    } catch (error) {
+        console.error('Error in unpinNote', error);
+        res.status(500).json({ message: "Failed to unpin note" });
+    }
+}
+
+export async function togglePin(req, res) {
+    try {
+        const note = await Note.findOne({ _id: req.params.id, userId: req.user._id });
+        if (!note) return res.status(404).json({ message: "Note not found" });
+        note.isPinned = !note.isPinned;
+        await note.save();
+        await note.populate('tags', 'name color');
+        res.status(200).json(note);
+    } catch (error) {
+        console.error('Error in togglePin', error);
+        res.status(500).json({ message: "Failed to toggle pin" });
     }
 }

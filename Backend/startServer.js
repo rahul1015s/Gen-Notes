@@ -1,10 +1,14 @@
 import app from "./app.js";
 import { PORT } from "./config/env.js";
 import connectToDatabase from "./database/mongodb.js";
+import { startReminderScheduler } from "./services/reminderScheduler.js";
+import { startDailySyncScheduler } from "./services/dailySyncScheduler.js";
 
 // Connect to db and start server for local development
 if (process.env.NODE_ENV !== 'production') {
     connectToDatabase().then(() => {
+        startReminderScheduler();
+        startDailySyncScheduler();
         app.listen(PORT, () => {
             console.log(`App is running on http://localhost:${PORT}`);
         });

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createNote, deleteNote, getAllNotes, getNoteById, updateNote, searchNotes } from "../controllers/notes.controller.js";
+import { createNote, deleteNote, getAllNotes, getNoteById, updateNote, searchNotes, pinNote, unpinNote, togglePin } from "../controllers/notes.controller.js";
 import { appLimiter } from "../middlewares/rateLimit.middleware.js";
 import authorize from "../middlewares/auth.middleware.js";
 
@@ -10,6 +10,10 @@ notesRouter.use(authorize);
 
 // Search route (must come before /:id)
 notesRouter.get('/search', searchNotes);
+
+notesRouter.post('/:id/pin', pinNote);
+notesRouter.delete('/:id/pin', unpinNote);
+notesRouter.patch('/:id/pin', togglePin);
 
 notesRouter.post('/', createNote);
 notesRouter.get('/', getAllNotes);

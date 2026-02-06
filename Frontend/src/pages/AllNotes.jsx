@@ -23,6 +23,7 @@ import DashboardTopBar from '../components/dashboard/TopBar.jsx';
 import DashboardBottomNav from '../components/dashboard/BottomNav.jsx';
 import DashboardNotesGrid from '../components/dashboard/NotesGrid.jsx';
 import TagManager from '../components/TagManager.jsx';
+import ClockWidget from '../components/ClockWidget.jsx';
 import api from '../lib/axios.js';
 import GlobalSearch from '../features/search/Search.jsx';
 import offlineSyncService from '../services/offlineSyncService.js';
@@ -45,6 +46,7 @@ const AllNotes = () => {
   const [isOnlineStatus, setIsOnlineStatus] = useState(navigator.onLine);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [viewMode, setViewMode] = useState('grid');
+  const [mobileFilter, setMobileFilter] = useState('all'); // all | pinned
   const [activeTab, setActiveTab] = useState('notes');
   const [isDark, setIsDark] = useState(() => {
     // Load theme from localStorage, default to dark
@@ -57,10 +59,12 @@ const AllNotes = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
 
   // Data state
   const [notes, setNotes] = useState([]);
   const [folders, setFolders] = useState([]);
+  const [appUnlocked, setAppUnlocked] = useState(() => !!sessionStorage.getItem('appUnlocked'));
   const [tags, setTags] = useState([]);
   const [selectedTag, setSelectedTag] = useState(null);
 
@@ -92,6 +96,13 @@ const AllNotes = () => {
     const init = async () => {
       try {
         await offlineSyncService.initDB();
+        // Hydrate UI quickly from offline cache
+        const cachedNotes = await offlineSyncService.getAllNotesOffline();
+        if (mounted && cachedNotes && cachedNotes.length > 0) {
+          setNotes(cachedNotes);
+          setHasHydrated(true);
+          setLoading(false);
+        }
         
         // Check for pending syncs
         const pending = await offlineSyncService.getPendingSyncItems();
@@ -127,6 +138,13 @@ const AllNotes = () => {
       window.removeEventListener('offline', onOffline);
     };
   }, [syncOfflineChanges]);
+
+  // Track app unlock state (for private folders)
+  useEffect(() => {
+    const onFocus = () => setAppUnlocked(!!sessionStorage.getItem('appUnlocked'));
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
 
   // Fetch notes/folders/tags
   useEffect(() => {
@@ -194,6 +212,11 @@ const AllNotes = () => {
   }, [isOnlineStatus]);
 
   // Derived lists
+  const privateFolderIds = useMemo(
+    () => new Set(folders.filter(f => f.isPrivate).map(f => f._id)),
+    [folders]
+  );
+
   const displayNotes = useMemo(() => {
     let filtered = notes;
     
@@ -209,15 +232,24 @@ const AllNotes = () => {
       );
     }
     
+    if (!appUnlocked) {
+      filtered = filtered.filter(n => !privateFolderIds.has(n.folderId));
+    }
+
     return filtered;
-  }, [notes, folderId, selectedTag]);
+  }, [notes, folderId, selectedTag, appUnlocked, privateFolderIds]);
 
   const pinnedNotes = useMemo(() => pinService.getPinnedNotes(displayNotes), [displayNotes]);
   const unpinnedNotes = useMemo(() => pinService.getUnpinnedNotes(displayNotes), [displayNotes]);
 
+  const visibleFolders = useMemo(() => {
+    if (appUnlocked) return folders;
+    return folders.filter(f => !f.isPrivate);
+  }, [folders, appUnlocked]);
+
   const currentFolder = useMemo(
-    () => folders.find(f => f._id === folderId),
-    [folders, folderId]
+    () => visibleFolders.find(f => f._id === folderId),
+    [visibleFolders, folderId]
   );
 
   const handleDragStart = (e, note) => {
@@ -357,15 +389,15 @@ const AllNotes = () => {
     };
   };
 
-  const transformedNotes = displayNotes.map((note) => {
+  const transformNotes = (list) => list.map((note) => {
     const folder = getFolderForNote(note._id);
-    
     return {
       title: note.title,
       course: {
         name: folder.name,
         color: folder.color,
       },
+      isPinned: !!note.isPinned,
       priority: note.priority || 'medium',
       description: note.content ? note.content.substring(0, 100) : 'No description',
       tags: note.tags && Array.isArray(note.tags) ? note.tags.map(t => typeof t === 'string' ? t : t.name) : [],
@@ -374,6 +406,11 @@ const AllNotes = () => {
       _id: note._id,
     };
   });
+
+  const mobileFilteredNotes = useMemo(() => {
+    if (mobileFilter === 'pinned') return pinnedNotes;
+    return displayNotes;
+  }, [mobileFilter, pinnedNotes, displayNotes]);
 
   return (
     <div className={cn(
@@ -385,7 +422,7 @@ const AllNotes = () => {
       {/* Sidebar - Desktop only */}
       <DashboardSidebar 
         totalNotes={displayNotes.length}
-        folders={folders}
+        folders={visibleFolders}
         onFolderSelect={(folderId) => navigate(`/all-notes/${folderId}`)}
         onFolderCreated={(newFolder) => {
           setFolders([...folders, newFolder]);
@@ -412,24 +449,90 @@ const AllNotes = () => {
         )}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Header */}
-            <div className="mb-8 flex items-center justify-between">
-              <div>
-                <h2 className={cn("text-3xl font-bold mb-2", isDark ? "text-white" : "text-slate-900")}>
-                  {folderId && currentFolder ? `${currentFolder.icon} ${currentFolder.name}` : 'All Notes'}
-                </h2>
-                <p className={cn("", isDark ? "text-slate-400" : "text-slate-600")}>{displayNotes.length} notes found</p>
+            <div className="mb-6 lg:mb-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className={cn("text-3xl font-bold mb-2", isDark ? "text-white" : "text-slate-900")}>
+                    {folderId && currentFolder ? `${currentFolder.icon} ${currentFolder.name}` : 'All Notes'}
+                  </h2>
+                  <p className={cn("", isDark ? "text-slate-400" : "text-slate-600")}>{displayNotes.length} notes found</p>
+                </div>
+                <div className="hidden md:block">
+                  <TagManager 
+                    isDark={isDark} 
+                    onTagCreated={(newTag) => {
+                      // Tag created, can refresh tags if needed
+                      console.log('New tag created:', newTag);
+                    }}
+                  />
+                </div>
               </div>
-              <TagManager 
-                isDark={isDark} 
-                onTagCreated={(newTag) => {
-                  // Tag created, can refresh tags if needed
-                  console.log('New tag created:', newTag);
-                }}
-              />
+              <div className="hidden lg:block">
+              <ClockWidget className={isDark ? "border-slate-700/50 bg-slate-800/30 text-slate-200" : "border-slate-200 bg-white text-slate-900"} />
+              </div>
+              <div className="md:hidden">
+                <TagManager 
+                  isDark={isDark} 
+                  onTagCreated={(newTag) => {
+                    console.log('New tag created:', newTag);
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Mobile Quick Filters */}
+            <div className="lg:hidden mb-4">
+              <div className={cn("flex items-center gap-2 p-2 rounded-xl border", isDark ? "border-slate-700/50 bg-slate-800/30" : "border-slate-200 bg-white")}>
+                <button
+                  className={cn(
+                    "flex-1 py-2 rounded-lg text-sm font-medium",
+                    mobileFilter === 'all'
+                      ? (isDark ? "bg-slate-700 text-white" : "bg-slate-900 text-white")
+                      : (isDark ? "text-slate-300" : "text-slate-600")
+                  )}
+                  onClick={() => setMobileFilter('all')}
+                >
+                  All
+                </button>
+                <button
+                  className={cn(
+                    "flex-1 py-2 rounded-lg text-sm font-medium",
+                    mobileFilter === 'pinned'
+                      ? (isDark ? "bg-slate-700 text-white" : "bg-slate-900 text-white")
+                      : (isDark ? "text-slate-300" : "text-slate-600")
+                  )}
+                  onClick={() => setMobileFilter('pinned')}
+                >
+                  Pinned
+                </button>
+                <div className="w-px h-8 bg-slate-200/50 dark:bg-slate-700/50"></div>
+                <button
+                  className={cn(
+                    "px-3 py-2 rounded-lg text-sm font-medium",
+                    viewMode === 'grid'
+                      ? (isDark ? "bg-slate-700 text-white" : "bg-slate-900 text-white")
+                      : (isDark ? "text-slate-300" : "text-slate-600")
+                  )}
+                  onClick={() => setViewMode('grid')}
+                >
+                  Grid
+                </button>
+                <button
+                  className={cn(
+                    "px-3 py-2 rounded-lg text-sm font-medium",
+                    viewMode === 'list'
+                      ? (isDark ? "bg-slate-700 text-white" : "bg-slate-900 text-white")
+                      : (isDark ? "text-slate-300" : "text-slate-600")
+                  )}
+                  onClick={() => setViewMode('list')}
+                >
+                  List
+                </button>
+              </div>
             </div>
 
             {/* Notes Grid/List */}
-            {loading && !searchQuery ? (
+            {loading && !searchQuery && !hasHydrated ? (
               <div className="flex items-center justify-center py-20">
                 <div className="text-center">
                   <div className={cn("animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4", isDark ? "border-blue-500" : "border-blue-600")}></div>
@@ -445,9 +548,11 @@ const AllNotes = () => {
               </div>
             ) : (
               <DashboardNotesGrid
-                notes={searchQuery ? searchResults : transformedNotes}
+                notes={searchQuery ? transformNotes(searchResults) : transformNotes(mobileFilteredNotes)}
                 viewMode={viewMode}
                 onNoteClick={(note) => navigate(`/note/${note._id}`)}
+                onPin={(note) => handlePinNote(note._id)}
+                onDelete={(note) => handleDeleteNote(note._id)}
                 isDark={isDark}
               />
             )}
@@ -468,11 +573,23 @@ const AllNotes = () => {
             setActiveTab(tab);
           }
         }}
-        folders={folders}
+        folders={visibleFolders}
         notes={displayNotes}
         isDark={isDark}
         onFolderSelect={(folderId) => navigate(`/all-notes/${folderId}`)}
       />
+
+      {/* Mobile FAB */}
+      <button
+        className={cn(
+          "fixed bottom-24 right-5 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center lg:hidden",
+          isDark ? "bg-blue-600 text-white" : "bg-slate-900 text-white"
+        )}
+        onClick={goCreateNote}
+        title="New Note"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
     </div>
   );
 };

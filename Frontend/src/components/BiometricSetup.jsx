@@ -177,6 +177,8 @@ const BiometricSetup = ({ token, isDark = true }) => {
                   'text-xs',
                   isDark ? 'text-slate-500' : 'text-slate-600'
                 )}>
+                  {cred.displayId || cred.id}
+                  {' • '}
                   Added {new Date(cred.createdAt).toLocaleDateString()}
                   {cred.lastUsedAt && (
                     <> • Last used {new Date(cred.lastUsedAt).toLocaleDateString()}</>

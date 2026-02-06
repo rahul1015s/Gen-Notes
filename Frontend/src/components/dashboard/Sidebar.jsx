@@ -23,6 +23,7 @@ export default function Sidebar({ totalNotes = 0, folders = [], onFolderSelect =
   const [folderName, setFolderName] = useState('');
   const [folderDescription, setFolderDescription] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
 
   // Update stats when total notes change
   useEffect(() => {
@@ -56,11 +57,13 @@ export default function Sidebar({ totalNotes = 0, folders = [], onFolderSelect =
       const response = await api.post('/api/v1/folders', {
         name: folderName.trim(),
         description: folderDescription.trim(),
+        isPrivate,
       });
       
       toast.success('Folder created successfully!');
       setFolderName('');
       setFolderDescription('');
+      setIsPrivate(false);
       setShowFolderModal(false);
       onFolderCreated(response.data);
     } catch (error) {
@@ -175,7 +178,9 @@ export default function Sidebar({ totalNotes = 0, folders = [], onFolderSelect =
                 >
                   <div className={cn('w-3 h-3 rounded-full shrink-0 mt-1.5', color)} />
                   <div className="flex-1 min-w-0">
-                    <p className={cn("text-xs font-semibold", isDark ? "text-slate-300" : "text-slate-700")}>{folder.name}</p>
+                    <p className={cn("text-xs font-semibold", isDark ? "text-slate-300" : "text-slate-700")}>
+                      {folder.name} {folder.isPrivate ? "🔒" : ""}
+                    </p>
                     <p className={cn("text-xs truncate", isDark ? "text-slate-500" : "text-slate-400")}>{folder.description || 'No description'}</p>
                   </div>
                   <span className={cn("text-xs shrink-0", isDark ? "text-slate-500" : "text-slate-400")}>{folder.noteCount || 0}</span>
@@ -282,6 +287,15 @@ export default function Sidebar({ totalNotes = 0, folders = [], onFolderSelect =
                   )}
                 />
               </div>
+              <label className={cn("flex items-center gap-2 text-sm", isDark ? "text-slate-300" : "text-slate-700")}>
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-sm"
+                  checked={isPrivate}
+                  onChange={(e) => setIsPrivate(e.target.checked)}
+                />
+                Private folder (requires app unlock)
+              </label>
             </div>
 
             <div className="flex gap-3 pt-4">

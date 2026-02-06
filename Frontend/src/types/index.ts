@@ -11,6 +11,7 @@ export interface Note {
   isLocked?: boolean;
   reminder?: Reminder;
   isTemplate?: boolean;
+  tasks?: TaskItem[];
 }
 
 // Tag Types
@@ -41,6 +42,18 @@ export interface Reminder {
   dateTime: string;
   message?: string;
   notified?: boolean;
+}
+
+// Task Types
+export interface TaskItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  order: number;
+  priority: 'low' | 'medium' | 'high';
+  dueDate?: string | null;
+  reminderAt?: string | null;
+  children?: TaskItem[];
 }
 
 // Lock Types

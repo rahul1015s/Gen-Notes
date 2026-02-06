@@ -47,7 +47,7 @@ export const registerBiometric = async (token) => {
 
     // Step 1: Get registration options from backend
     console.log('Fetching registration options...');
-    const optionsResponse = await api.get('/api/v1/auth/webauthn/register-options', {
+    const optionsResponse = await api.post('/api/v1/auth/webauthn/register-options', null, {
       headers: { Authorization: `Bearer ${token}` }
     });
 

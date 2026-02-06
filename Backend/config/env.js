@@ -17,5 +17,12 @@ export const {
     MAIL_USER,
     MAIL_PASS ,
     MAIL_FROM_NAME ,
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY,
+    VAPID_SUBJECT,
+    DAILY_SYNC_TZ,
+    DAILY_SYNC_HOUR,
+    DAILY_SYNC_MINUTE,
+    CRON_SECRET,
 
 } = process.env;

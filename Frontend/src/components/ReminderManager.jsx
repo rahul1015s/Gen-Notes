@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Plus, Trash2, Loader2, Clock, RefreshCw, Pause } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/axios.js';
+import { ensurePushSubscription } from '../services/pushService.js';
 
 const ReminderManager = ({ noteId }) => {
   const [reminders, setReminders] = useState([]);
@@ -39,6 +40,11 @@ const ReminderManager = ({ noteId }) => {
 
     try {
       setLoading(true);
+      try {
+        await ensurePushSubscription();
+      } catch (err) {
+        toast.error(err.message || 'Notifications not enabled');
+      }
       await api.post('/api/v1/reminders', {
         noteId,
         title: formData.title,

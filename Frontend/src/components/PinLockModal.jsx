@@ -3,8 +3,9 @@ import { Lock, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/axios.js';
 
-const PinLockModal = ({ noteId, isOpen, onClose, onUnlocked }) => {
+const PinLockModal = ({ noteId, isOpen, onClose, onUnlocked, lockType = 'PIN' }) => {
   const [pin, setPin] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [attemptsRemaining, setAttemptsRemaining] = useState(3);
@@ -18,8 +19,12 @@ const PinLockModal = ({ noteId, isOpen, onClose, onUnlocked }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (pin.length !== 4) {
+    if ((lockType === 'PIN' || lockType === 'PIN_PASSWORD') && pin.length !== 4) {
       setError('PIN must be 4 digits');
+      return;
+    }
+    if ((lockType === 'PASSWORD' || lockType === 'PIN_PASSWORD') && !password) {
+      setError('Password is required');
       return;
     }
 
@@ -27,11 +32,13 @@ const PinLockModal = ({ noteId, isOpen, onClose, onUnlocked }) => {
     try {
       await api.post('/api/v1/locks/verify', {
         noteId,
-        pin: parseInt(pin),
+        pin: pin ? parseInt(pin) : undefined,
+        password: password || undefined,
       });
       
       toast.success('✅ Note unlocked!');
       setPin('');
+      setPassword('');
       setError('');
       onUnlocked?.(true);
       onClose?.();
@@ -66,7 +73,7 @@ const PinLockModal = ({ noteId, isOpen, onClose, onUnlocked }) => {
             onClick={onClose}
             className="btn btn-ghost btn-sm btn-circle"
           >
-            <X className="w-4 h-4" />
+          
           </button>
         </div>
 
@@ -77,7 +84,8 @@ const PinLockModal = ({ noteId, isOpen, onClose, onUnlocked }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* PIN Input */}
+        {/* PIN Input */}
+        {(lockType === 'PIN' || lockType === 'PIN_PASSWORD') && (
           <div>
             <input
               type="password"
@@ -101,6 +109,18 @@ const PinLockModal = ({ noteId, isOpen, onClose, onUnlocked }) => {
               ))}
             </div>
           </div>
+        )}
+
+        {(lockType === 'PASSWORD' || lockType === 'PIN_PASSWORD') && (
+          <input
+            type="password"
+            placeholder="Enter password"
+            className="input input-bordered w-full focus:input-primary"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+          />
+        )}
 
           {/* Error Message */}
           {error && (
@@ -115,7 +135,8 @@ const PinLockModal = ({ noteId, isOpen, onClose, onUnlocked }) => {
           )}
 
           {/* Number Pad */}
-          <div className="grid grid-cols-3 gap-2 my-6">
+          {(lockType === 'PIN' || lockType === 'PIN_PASSWORD') && (
+            <div className="grid grid-cols-3 gap-2 my-6">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
               <button
                 key={num}
@@ -144,6 +165,7 @@ const PinLockModal = ({ noteId, isOpen, onClose, onUnlocked }) => {
               ← Del
             </button>
           </div>
+          )}
 
           {/* Submit Button */}
           <button
